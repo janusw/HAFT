@@ -41,6 +41,8 @@ module HAFT
                           sizep = 1000,   &  ! <<== change if < xdimp*ydimp
                           nids  = 14         ! <<== change if < max id
 
+  real*4, parameter :: pi = 3.141592654, twopi = 2.*pi
+
   character(len=200), save :: fname  = 'HadesAcceptanceFilter.acc', &
                               fname2 = 'HadesPairAcceptanceFilter.acc'
 
@@ -405,8 +407,8 @@ contains
     !  Opens file in unformatted direct access mode
     !  and reads HADES acceptance matrices (as linearized arrays)
     !
-      integer*4 runit
-      parameter (runit=77)  ! change if input unit is already busy
+      integer*4, parameter :: runit = 77  ! change if input unit is already busy
+
       integer*4 pid
       integer*4 i
       integer*4 bytes       ! byte counter
@@ -633,8 +635,8 @@ contains
     !  Opens file in unformatted direct access mode
     !  and reads HADES pair acceptance matrix (as linearized array)
     !
-      integer*4 runit
-      parameter (runit=78)  ! change if input unit is already busy
+      integer*4, parameter :: runit = 78  ! change if input unit is already busy
+
       integer*4 i
       integer*4 bytes       ! byte counter
       integer*4 bins
@@ -873,8 +875,7 @@ contains
       integer*4 retcode, readHAFTmatrix
       real*4 mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
       real*4 sigp, sampleGauss, betainv, sigms, sigms2, sigthms, sigphms
-      real*4 pi, twopi, r2d
-      parameter (pi=3.141592654, twopi=2.*pi, r2d=180./pi)
+      real*4, parameter :: r2d = 180./pi
       real*4 ploss
       real*4 respar(10), param, sampleMP
       integer*4 i
@@ -1087,8 +1088,6 @@ contains
     !
       real*4, intent(in) :: mean, sigma
 
-      real*4 pi, twopi
-      parameter (pi=3.141592654, twopi=2.*pi)
       real*4 theta
 
       sampleGauss = mean
