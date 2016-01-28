@@ -144,8 +144,7 @@ contains
         jhi = iy+1
         klo = iz
         khi = iz+1
-      else if (abs(mod_)==2 .or. abs(mod_)==3 &
-                              .or. abs(mod_)==4) then
+      else if (abs(mod_)==2 .or. abs(mod_)==3 .or. abs(mod_)==4) then
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
@@ -230,8 +229,8 @@ contains
       call getDimensions(51,xdim,ydim,zdim)
       call getLimits(51,mlo,mup,dm,ptlo,ptup,dpt,raplo,rapup,drap) 
 
-      if (mass0<mlo .or. pt0<ptlo .or. pt0>ptup &
-          .or. rap0<raplo .or. rap0>rapup) return
+      if (mass0<mlo .or. pt0<ptlo .or. pt0>ptup .or. rap0<raplo .or. rap0>rapup) &
+        return
 
       mass = min(mass0,mup-2.01*dm)  ! level off acceptance at high mass
       pt = pt0
@@ -248,8 +247,7 @@ contains
         jhi = iy+1
         klo = iz
         khi = iz+1
-      else if (abs(mod)==2 .or. abs(mod)==3 &
-                             .or. abs(mod)==4) then
+      else if (abs(mod)==2 .or. abs(mod)==3 .or. abs(mod)==4) then
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
@@ -915,10 +913,11 @@ contains
             ploss = 0.0
          end if
          if (ptot>0.1) then
-            if (pid==2) &
-                  ploss = ploss + 0.005*(1.-exp(-(ptot-0.1)/0.053)) ! positron
-            if (pid==3) &
-                  ploss = ploss + 0.006*(1.-exp(-(ptot-0.1)/0.078)) ! electron
+            if (pid==2) then
+               ploss = ploss + 0.005*(1.-exp(-(ptot-0.1)/0.053)) ! positron
+            else if (pid==3) then
+               ploss = ploss + 0.006*(1.-exp(-(ptot-0.1)/0.078)) ! electron
+            end if
          end if
          ptot = ptot - ploss                    ! Eloss of electrons in target
 
@@ -1309,8 +1308,7 @@ contains
         ihi = ix+1
         jlo = iy
         jhi = iy+1
-      else if (abs(mod)==2 .or. abs(mod)==3 &
-                             .or. abs(mod)==4) then
+      else if (abs(mod)==2 .or. abs(mod)==3 .or. abs(mod)==4) then
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
