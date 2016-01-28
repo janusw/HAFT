@@ -120,32 +120,32 @@ contains
       getHadesAcceptance = 0.
 
       retcode = readHAFTmatrix()
-      if (retcode.eq.-1) return
+      if (retcode==-1) return
 
       call getDimensions(pid,xdim,ydim,zdim)
       call getLimits(pid,plo,pup,dp,thlo,thup,dth,phlo,phup,dph) 
 
-      if (p0.lt.plo .or. theta0.lt.thlo .or. theta0.gt.thup) return
-      if (phi0.lt.phlo) return
+      if (p0<plo .or. theta0<thlo .or. theta0>thup) return
+      if (phi0<phlo) return
 
       p = min(p0,pup-2.01*dp)  ! level off acceptance at high p
       theta = theta0
       phi = phi0
-      if (phi .gt. 60.) phi = mod(phi,60._4)   ! modulo HADES sector
+      if (phi > 60.) phi = mod(phi,60._4)   ! modulo HADES sector
 
       ix = xdim*((p-0.5*dp-plo)/(pup-plo)) + 1      ! floor indexes
       iy = ydim*((theta-0.5*dth-thlo)/(thup-thlo)) + 1
       iz = zdim*((phi-0.5*dph-phlo)/(phup-phlo)) + 1
 
-      if (mod_.eq.0 .or. mod_.eq.1) then   ! set summation limits
+      if (mod_==0 .or. mod_==1) then   ! set summation limits
         ilo = ix
         ihi = ix+1
         jlo = iy
         jhi = iy+1
         klo = iz
         khi = iz+1
-      else if (abs(mod_).eq.2 .or. abs(mod_).eq.3 &
-                              .or. abs(mod_).eq.4) then
+      else if (abs(mod_)==2 .or. abs(mod_)==3 &
+                              .or. abs(mod_)==4) then
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
@@ -156,8 +156,8 @@ contains
         return
       end if
 
-      if (ilo.lt.0 .or. jlo.lt.0 .or. klo.lt.0) return
-      if (ihi.gt.xdim+1 .or. jhi.gt.ydim+1 .or. khi.gt.zdim+1) return
+      if (ilo<0 .or. jlo<0 .or. klo<0) return
+      if (ihi>xdim+1 .or. jhi>ydim+1 .or. khi>zdim+1) return
 
       sum = 0. 
       do i=ilo,ihi                      ! triple interpolation loop
@@ -225,7 +225,7 @@ contains
 
       getHadesPairAcceptance = 0.
       retcode = readHAFTPairMatrix()
-      if (retcode.eq.-1) return
+      if (retcode==-1) return
 
       mod = 1    ! use trilinear interpolation
 !     mod = mode ! (use mode = 0 or 1, otherwise problems at pt=0!) 
@@ -233,8 +233,8 @@ contains
       call getDimensions(51,xdim,ydim,zdim)
       call getLimits(51,mlo,mup,dm,ptlo,ptup,dpt,raplo,rapup,drap) 
 
-      if (mass0.lt.mlo .or. pt0.lt.ptlo .or. pt0.gt.ptup &
-          .or. rap0.lt.raplo .or. rap0.gt.rapup) return
+      if (mass0<mlo .or. pt0<ptlo .or. pt0>ptup &
+          .or. rap0<raplo .or. rap0>rapup) return
 
       mass = min(mass0,mup-2.01*dm)  ! level off acceptance at high mass
       pt = pt0
@@ -244,15 +244,15 @@ contains
       iy = ydim*((pt-0.5*dpt-ptlo)/(ptup-ptlo)) + 1
       iz = zdim*((rap-0.5*drap-raplo)/(rapup-raplo)) + 1
 
-      if (mod.eq.0 .or. mod.eq.1) then   ! set summation limits
+      if (mod==0 .or. mod==1) then   ! set summation limits
         ilo = ix
         ihi = ix+1
         jlo = iy
         jhi = iy+1
         klo = iz
         khi = iz+1
-      else if (abs(mod).eq.2 .or. abs(mod).eq.3 &
-                             .or. abs(mod).eq.4) then
+      else if (abs(mod)==2 .or. abs(mod)==3 &
+                             .or. abs(mod)==4) then
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
@@ -263,8 +263,8 @@ contains
         return
       end if
 
-      if (ilo.lt.0 .or. jlo.lt.0 .or. klo.lt.0) return
-      if (ihi.gt.xdim+1 .or. jhi.gt.ydim+1 .or. khi.gt.zdim+1) return
+      if (ilo<0 .or. jlo<0 .or. klo<0) return
+      if (ihi>xdim+1 .or. jhi>ydim+1 .or. khi>zdim+1) return
 
       sum = 0. 
       do i=ilo,ihi                      ! triple interpolation loop
@@ -311,7 +311,7 @@ contains
 
       select case (mode)
       case (0)  ! nearest neighbour
-        if (u.gt.-0.5 .and. u.le.0.5) then
+        if (u>-0.5 .and. u<=0.5) then
           kernel = 1.
         else 
           kernel = 0.
@@ -319,7 +319,7 @@ contains
 
       case (1)  ! linear
         ua = abs(u)
-        if (ua.lt.1.) then
+        if (ua<1.) then
           kernel = 1.-ua
         else 
           kernel = 0.
@@ -327,9 +327,9 @@ contains
 
       case (2)  ! quadratic
         ua = abs(u)
-        if (ua.le.0.5) then
+        if (ua<=0.5) then
           kernel = 1.0-2.*ua*ua
-        else if (ua.le.1.5) then
+        else if (ua<=1.5) then
           kernel = 1.5+(ua-2.5)*ua
         else 
           kernel = 0.
@@ -337,9 +337,9 @@ contains
 
       case (-2)  ! quadratic B-spline
         ua = abs(u)
-        if (ua.le.0.5) then
+        if (ua<=0.5) then
           kernel = 0.75-ua*ua
-        else if (ua.le.1.5) then
+        else if (ua<=1.5) then
           kernel = 1.125+0.5*(ua-3.)*ua
         else 
           kernel = 0.
@@ -347,9 +347,9 @@ contains
 
       case (3)  ! cubic
         ua = abs(u)
-        if (ua.le.1.) then
+        if (ua<=1.) then
           kernel = 1.+(ua-2.)*ua*ua
-        else if (ua.le.2.) then
+        else if (ua<=2.) then
           kernel = 4.+((5.-ua)*ua-8.)*ua
         else 
           kernel = 0.
@@ -357,9 +357,9 @@ contains
 
       case (-3)  ! cubic B-spline
         ua = abs(u)
-        if (ua.le.1.) then
+        if (ua<=1.) then
           kernel = 2./3.+(0.5*ua-1.)*ua*ua
-        else if (ua.le.2.) then
+        else if (ua<=2.) then
           kernel = 4./3.+((1.-ua/6.)*ua-2.)*ua
         else 
           kernel = 0.
@@ -367,9 +367,9 @@ contains
 
       case (4)  ! cubic Catmull-Rom
         ua = abs(u)
-        if (ua.le.1.) then
+        if (ua<=1.) then
           kernel = 1.+(1.5*ua-2.5)*ua*ua
-        else if (ua.le.2.) then
+        else if (ua<=2.) then
           kernel = 2.+((2.5-0.5*ua)*ua-4.)*ua
         else 
           kernel = 0.
@@ -378,9 +378,9 @@ contains
       case (-4)  ! optimal cubic cardinal spline
                  ! (=compromise between blurring and ringing)
         ua = abs(u)
-        if (ua.le.1.) then
+        if (ua<=1.) then
           kernel = 8./9.+(7./6.*ua-2.)*ua*ua
-        else if (ua.le.2.) then
+        else if (ua<=2.) then
           kernel = 16./9.+((2.-7./18.*ua)*ua-10./3.)*ua
         else 
           kernel = 0.
@@ -410,7 +410,7 @@ contains
 
       readHAFTmatrix = 0
 
-      if (readflag.eq.1) return
+      if (readflag==1) return
 
       readflag = 0
       do i=1,size           ! set all matrices to 0
@@ -439,7 +439,7 @@ contains
 
       lc = len(fname)
       do i=1,lc
-         if (fname(i:i+3).eq.'.acc') goto 1
+         if (fname(i:i+3)=='.acc') goto 1
       end do
  1    lc = i+3
       open(unit=runit,file=fname,access='stream',status='old',err=99)
@@ -455,8 +455,8 @@ contains
       bytes = bytes + 9*4
 
  40   read(runit,pos=bytes,end=50,err=100) pid  ! break out if EOF reached
-      if (pid.lt.0) goto 45
-      if (pid.lt.1 .or. pid.gt.nids) goto 50
+      if (pid<0) goto 45
+      if (pid<1 .or. pid>nids) goto 50
 
 !ccccccccccccccc read acceptance matrix 
 
@@ -464,32 +464,32 @@ contains
       read(runit,pos=bytes,err=100) xdim(pid), ydim(pid), zdim(pid)
 
       bins = xdim(pid)*ydim(pid)*zdim(pid)
-      if (bins.gt.size) goto 101  ! check if enough memory available
+      if (bins>size) goto 101  ! check if enough memory available
 
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) pmin(pid),pmax(pid),   &
                                     thmin(pid),thmax(pid), &
                                     phmin(pid),phmax(pid)
       bytes = bytes + 6*4
-      if (pid.eq.2) then        ! positron
+      if (pid==2) then        ! positron
         read(runit,pos=bytes,err=100) (matrix2(i),i=1,bins)
         write(6,'(''Matrix read for e+'')')
-      else if (pid.eq.3) then     ! electron
+      else if (pid==3) then     ! electron
         read(runit,pos=bytes,err=100) (matrix3(i),i=1,bins)
         write(6,'(''Matrix read for e-'')')
-      else if (pid.eq.8) then     ! pi+
+      else if (pid==8) then     ! pi+
         read(runit,pos=bytes,err=100) (matrix8(i),i=1,bins)
         write(6,'(''Matrix read for pi+'')')
-      else if (pid.eq.9) then     ! pi-
+      else if (pid==9) then     ! pi-
         read(runit,pos=bytes,err=100) (matrix9(i),i=1,bins)
         write(6,'(''Matrix read for pi-'')')
-      else if (pid.eq.10) then    ! K+
+      else if (pid==10) then    ! K+
         read(runit,pos=bytes,err=100) (matrix10(i),i=1,bins)
         write(6,'(''Matrix read for K+'')')
-      else if (pid.eq.12) then    ! K-
+      else if (pid==12) then    ! K-
         read(runit,pos=bytes,err=100) (matrix12(i),i=1,bins)
         write(6,'(''Matrix read for K-'')')
-      else if (pid.eq.14) then    ! proton
+      else if (pid==14) then    ! proton
         read(runit,pos=bytes,err=100) (matrix14(i),i=1,bins)
         write(6,'(''Matrix read for p'')')
       else
@@ -514,13 +514,13 @@ contains
 !ccccccccccccccc read resolution parameters 
 
  45   pid = -pid
-      if (pid.lt.2 .or. pid.gt.3) goto 102
+      if (pid<2 .or. pid>3) goto 102
 
       bytes = bytes + 4
       read(runit,pos=bytes,err=100) xdimp(pid), ydimp(pid)
 
       bins = xdimp(pid)*ydimp(pid)
-      if (bins.gt.sizep) goto 101  ! check if enough memory available
+      if (bins>sizep) goto 101  ! check if enough memory available
 
       bytes = bytes + 2*4
       read(runit,pos=bytes,err=100) pminp(pid),pmaxp(pid), &
@@ -528,50 +528,50 @@ contains
       bytes = bytes + 4*4
       read(runit,pos=bytes,err=100) ntab ! nb. of parameter tables
       bytes = bytes + 4
-      if (pid.eq.2) then          ! positron
+      if (pid==2) then          ! positron
         read(runit,pos=bytes,err=100) (par2p1(i),i=1,bins)
         bytes = bytes + bins*4
-        if (ntab.gt.1) then
+        if (ntab>1) then
           read(runit,pos=bytes,err=100) (par2p2(i),i=1,bins)
           bytes = bytes + bins*4
         end if
-        if (ntab.gt.2) then
+        if (ntab>2) then
           read(runit,pos=bytes,err=100) (par2p3(i),i=1,bins)
           bytes = bytes + bins*4
         end if
-        if (ntab.gt.3) then
+        if (ntab>3) then
           read(runit,pos=bytes,err=100) (par2p4(i),i=1,bins)
           bytes = bytes + bins*4
         end if
-        if (ntab.gt.4) then
+        if (ntab>4) then
           read(runit,pos=bytes,err=100) (par2p5(i),i=1,bins)
           bytes = bytes + bins*4
         end if
-        if (ntab.gt.5) then
+        if (ntab>5) then
           read(runit,pos=bytes,err=100) (par2p6(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         write(6,'(''Resolution tables read for e+'')')
-      else if (pid.eq.3) then     ! electron
+      else if (pid==3) then     ! electron
         read(runit,pos=bytes,err=100) (par3p1(i),i=1,bins)
         bytes = bytes + bins*4
-        if (ntab.gt.1) then
+        if (ntab>1) then
           read(runit,pos=bytes,err=100) (par3p2(i),i=1,bins)
           bytes = bytes + bins*4
         end if
-        if (ntab.gt.2) then
+        if (ntab>2) then
           read(runit,pos=bytes,err=100) (par3p3(i),i=1,bins)
           bytes = bytes + bins*4
         end if
-        if (ntab.gt.3) then
+        if (ntab>3) then
           read(runit,pos=bytes,err=100) (par3p4(i),i=1,bins)
           bytes = bytes + bins*4
         end if
-        if (ntab.gt.4) then
+        if (ntab>4) then
           read(runit,pos=bytes,err=100) (par3p5(i),i=1,bins)
           bytes = bytes + bins*4
         end if
-        if (ntab.gt.5) then
+        if (ntab>5) then
           read(runit,pos=bytes,err=100) (par3p6(i),i=1,bins)
           bytes = bytes + bins*4
         end if
@@ -637,7 +637,7 @@ contains
 
       readHAFTPairMatrix = 0
 
-      if (readflag2.eq.1) return
+      if (readflag2==1) return
 
       readflag2 = 0
       do i=1,size           ! set matrix to 0
@@ -646,7 +646,7 @@ contains
 
       lc = len(fname2)
       do i=1,lc
-         if (fname2(i:i+3).eq.'.acc') goto 1
+         if (fname2(i:i+3)=='.acc') goto 1
       end do
  1    lc = i+3
       open(unit=runit,file=fname2,access='stream',status='old',err=99)
@@ -657,7 +657,7 @@ contains
       read(runit,pos=bytes,err=100) xdim2, ydim2, zdim2
 
       bins = xdim2*ydim2*zdim2
-      if (bins.gt.size) goto 101  ! check if enough memory available
+      if (bins>size) goto 101  ! check if enough memory available
 
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) mmin,mmax,ptmin,ptmax,rapmin,rapmax
@@ -783,7 +783,7 @@ contains
       integer*4, intent(in) :: pid
       real*4, intent(out) :: xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
 
-      if (pid.eq.51) then  ! pair
+      if (pid==51) then  ! pair
         xlo  = mmin
         xhi  = mmax
         dx   = dm
@@ -815,7 +815,7 @@ contains
       integer*4, intent(in)  :: pid
       integer*4, intent(out) :: nx, ny, nz
 
-      if (pid.eq.51) then  ! pair
+      if (pid==51) then  ! pair
         nx  = xdim2
         ny = ydim2
         nz = zdim2
@@ -863,9 +863,9 @@ contains
       real*4 respar(10), param, sampleMP
       integer*4 i
 
-      if (readflag.eq.0) then
+      if (readflag==0) then
         retcode = readHAFTmatrix()
-        if (retcode.eq.-1) return
+        if (retcode==-1) return
       end if
 
       pt2 = mom(1)**2 + mom(2)**2
@@ -873,17 +873,17 @@ contains
       ptot2 = pt2 + mom(3)**2
       ptot = sqrt(ptot2)                      ! total momentum in GeV/c
       mass2 = mom(4)**2 - ptot2               ! particle mass does not change
-      if (mass2.lt.0.) mass2 = 0.
+      if (mass2<0.) mass2 = 0.
       mass = sqrt(mass2)
       betainv = 1.
-      if (mass2.gt.0.) betainv = sqrt(1. + mass2/ptot2)  ! 1/beta
+      if (mass2>0.) betainv = sqrt(1. + mass2/ptot2)  ! 1/beta
       sigms = 0.0136*betainv/ptot*sqrt(XX0)*(1+0.038*log(XX0))
                                               ! multiple scattering angle
       sigms2 = sigms*sigms
       sigthms = sqrt(sigth*sigth+sigms2)      ! add quadratically to resolution
       sigphms = sqrt(sigph*sigph+sigms2)
 
-      if (pid.eq.2 .or. pid.eq.3) then  ! leptons, use Ar+KCl embedding values
+      if (pid==2 .or. pid==3) then  ! leptons, use Ar+KCl embedding values
          sigthms = 0.00246/ptot + 0.00045
          sigphms = 0.00294/ptot + 0.00059
       endif
@@ -891,12 +891,12 @@ contains
       theta = acos(mom(3)/ptot)               ! polar angle in radian
       sinth = sin(theta)
       phi = 0.
-      if (pt.gt.0.) phi = acos(mom(1)/pt)
-      if (mom(2).lt.0.) phi = twopi - phi     ! azimuthal angle in radian
+      if (pt>0.) phi = acos(mom(1)/pt)
+      if (mom(2)<0.) phi = twopi - phi     ! azimuthal angle in radian
 
 !  If resolution parameters are available, use dedicated smearing
 
-      if (resflag(pid).eq.1) then   ! resolution parameters are loaded for pid?
+      if (resflag(pid)==1) then   ! resolution parameters are loaded for pid?
 
 !        write(6,*) mom(1), mom(2), mom(3), mass, ptot, r2d*theta
          do i=1,ntab    ! look up parameters from tables
@@ -908,19 +908,19 @@ contains
 
       else  ! use default gaussian smearing
 
-         if (mode.lt.1 .or. mode.gt.3) return  ! unknown mode
+         if (mode<1 .or. mode>3) return  ! unknown mode
          sigp = 0.01*ptot*(sigpA(mode)+sigpB(mode)*ptot)  ! momentum resolution
          ptot = max(0.,sampleGauss(ptot,sigp))  ! smear total momentum
 
-         if (pid.eq.2 .or. pid.eq.3) then
+         if (pid==2 .or. pid==3) then
             ploss = 0.0018
          else
             ploss = 0.0
          end if
-         if (ptot.gt.0.1) then
-            if (pid.eq.2) &
+         if (ptot>0.1) then
+            if (pid==2) &
                   ploss = ploss + 0.005*(1.-exp(-(ptot-0.1)/0.053)) ! positron
-            if (pid.eq.3) &
+            if (pid==3) &
                   ploss = ploss + 0.006*(1.-exp(-(ptot-0.1)/0.078)) ! electron
          end if
          ptot = ptot - ploss                    ! Eloss of electrons in target
@@ -928,10 +928,10 @@ contains
       end if
 
       theta = abs(sampleGauss(theta,sigthms)) ! smear polar angle
-      if (theta.gt.pi) theta = twopi - theta  ! if > pi, mirror angle
-      if (sinth.gt.0.01) phi = sampleGauss(phi,sigphms/sinth) ! smear azimuth
-      if (phi.lt.0.) phi = phi + twopi        ! and check if within range 
-      if (phi.gt.twopi) phi = phi - twopi
+      if (theta>pi) theta = twopi - theta  ! if > pi, mirror angle
+      if (sinth>0.01) phi = sampleGauss(phi,sigphms/sinth) ! smear azimuth
+      if (phi<0.) phi = phi + twopi        ! and check if within range 
+      if (phi>twopi) phi = phi - twopi
 
       sinth = sin(theta)
       mom(1) = ptot*sinth*cos(phi)            ! new momentum components
@@ -971,15 +971,15 @@ contains
       real*4 mom4(4)
       real*4 mass
 
-      if (mode.lt.1 .or. mode.gt.3) return    ! unknown mode
+      if (mode<1 .or. mode>3) return    ! unknown mode
 
-      if (pid.eq.2 .or. pid.eq.3) then        ! e+ or e-
+      if (pid==2 .or. pid==3) then        ! e+ or e-
          mass = 0.000510998918
-      else if (pid.eq.8 .or. pid.eq.9) then   ! pi+ or pi- 
+      else if (pid==8 .or. pid==9) then   ! pi+ or pi- 
          mass = 0.13957018
-      else if (pid.eq.11 .or. pid.eq.12) then ! K+ or K- 
+      else if (pid==11 .or. pid==12) then ! K+ or K- 
          mass = 0.493677
-      else if (pid.eq.14) then                ! proton
+      else if (pid==14) then                ! proton
          mass = 0.938272029
       else
          return  ! particle is not supported
@@ -1023,16 +1023,16 @@ contains
 
       real*4 respar(10), interpol, sampleMP
 
-      if (readflag.eq.0) then
+      if (readflag==0) then
         retcode = readHAFTmatrix()
-        if (retcode.eq.-1) return
+        if (retcode==-1) return
       end if
 
       m = pair(1)
       pt = pair(2)
       rap = pair(3)
 
-      if (mode.eq.4) then  ! use skewd mass function
+      if (mode==4) then  ! use skewd mass function
         sigpt = 0.01*pt*(sigpA(3)+sigpB(3)*pt)/sqrt(2.)       ! pt resolution
         pt = max(0.,sampleGauss(pt,sigpt))                  ! smear pt
 
@@ -1074,7 +1074,7 @@ contains
       real*4 theta
 
       sampleGauss = mean
-      if (sigma.le.0.) return
+      if (sigma<=0.) return
       theta = twopi*ran(iseed)
       sampleGauss = mean + sigma*cos(theta)*sqrt(-2.*log(ran(iseed)))
   end function sampleGauss
@@ -1101,19 +1101,19 @@ contains
       right = respar(4)   ! Par4 (<0)
       farleft = respar(5) ! Par5 (>0)
 
-      if (x.ge.(pos-ns*sig) .or. x.le.(-lg10/left+pos-ns*sig)) then
+      if (x>=(pos-ns*sig) .or. x<=(-lg10/left+pos-ns*sig)) then
          argn = 0.
       else 
          argn = 1.
       end if
 
-      if (x.ge.(pos-ns*sig)) then
+      if (x>=(pos-ns*sig)) then
         argp = 1.
       else
         argp = 0.
       end if
 
-      if (x.gt.(-lg10/left+pos-ns*sig)) then
+      if (x>(-lg10/left+pos-ns*sig)) then
         argn2 = 0.
       else
         argn2 = 1.
@@ -1182,27 +1182,27 @@ contains
          cnt3 = 0
          r1 = ran(iseed)
 !    select region and sample test function
-         if  (r1.lt.F0) then             ! far left tail
+         if  (r1<F0) then             ! far left tail
 
  10         continue
                cnt1 = cnt1 + 1
                r2 = log(ran(iseed))
                dx = r2/farleft - ns*sig + pos - lg10/left
-            if (cnt1.eq.1000) write(6,*) 'cnt1=1000 ', pos, sig, farleft
-            if (dx.lt.-1. .and. cnt1.lt.1000) goto 10  ! limit range to >=-1
+            if (cnt1==1000) write(6,*) 'cnt1=1000 ', pos, sig, farleft
+            if (dx<-1. .and. cnt1<1000) goto 10  ! limit range to >=-1
             ftest = A0 * exp(farleft*(dx+lg10/left-pos+ns*sig))
 
-         else if (r1.lt.F0+F1) then      ! left tail
+         else if (r1<F0+F1) then      ! left tail
 
  20         continue
                cnt2 = cnt2 + 1
                r2 = log(ran(iseed))
                dx = r2/left - ns*sig + pos
-            if (cnt2.eq.1000) write(6,*) 'cnt2=1000', pos, sig, left
-            if (dx.lt.-lg10/left-ns*sig+pos .and. cnt2.lt.1000) goto 20
+            if (cnt2==1000) write(6,*) 'cnt2=1000', pos, sig, left
+            if (dx<-lg10/left-ns*sig+pos .and. cnt2<1000) goto 20
             ftest = A1 * exp(left*(dx-pos+ns*sig))
 
-         else if (r1.lt.F0+F1+F2) then   ! peak region
+         else if (r1<F0+F1+F2) then   ! peak region
 
             r2 = ran(iseed) - 0.5
             dx = 2.*ns*sig*r2 + pos
@@ -1214,8 +1214,8 @@ contains
                cnt3 = cnt3 + 1
                r2 = log(ran(iseed))
                dx = r2/right + ns*sig + pos
-            if (cnt3.eq.1000) write(6,*) 'cnt3=1000', pos, sig, right
-            if (dx.gt.1. .and. cnt3.lt.1000) goto 30 ! limit range to <=1
+            if (cnt3==1000) write(6,*) 'cnt3=1000', pos, sig, right
+            if (dx>1. .and. cnt3<1000) goto 30 ! limit range to <=1
             ftest = A3 * exp(right*(dx-pos+ns*sig))
 
          end if
@@ -1224,7 +1224,7 @@ contains
          sampleMP = dx
 
          r3 = ran(iseed)
-         if ( r3.lt.momSpread(dx,respar,ns)/ftest ) return
+         if ( r3<momSpread(dx,respar,ns)/ftest ) return
 
       end do
 
@@ -1242,7 +1242,7 @@ contains
       real*4, intent(in) :: a, b
       integer*4, intent(in) :: mode
 
-      if (mode.ge.1 .and. mode.le.3) then
+      if (mode>=1 .and. mode<=3) then
          sigpA(mode) = a
          sigpB(mode) = b
       endif
@@ -1260,7 +1260,7 @@ contains
     !
       real*4, intent(in) :: stheta, sphi
 
-      if (stheta.gt.0. .and. sphi.gt.0.) then
+      if (stheta>0. .and. sphi>0.) then
          sigth = stheta
          sigph = sphi
       endif
@@ -1287,7 +1287,7 @@ contains
 
       mod = 1
       param = 0.
-      if (pid.lt.1 .or. pid.gt.nids) return
+      if (pid<1 .or. pid>nids) return
 
       p = pin
       th = thin
@@ -1297,10 +1297,10 @@ contains
       thlo = thminp(pid)
       thup = thmaxp(pid)
       dth0 = dthp(pid)
-      if (p.lt.plo) p = plo   ! safety fence
-      if (p.gt.pup) p = pup
-      if (th.lt.thlo) th = thlo
-      if (th.gt.thup) th = thup
+      if (p<plo) p = plo   ! safety fence
+      if (p>pup) p = pup
+      if (th<thlo) th = thlo
+      if (th>thup) th = thup
 
       xdi = xdimp(pid) ! get table dimensions
       ydi = ydimp(pid)
@@ -1308,13 +1308,13 @@ contains
       ix = xdi*((p-0.5*dp0-plo)/(pup-plo)) + 1      ! floor indices
       iy = ydi*((th-0.5*dth0-thlo)/(thup-thlo)) + 1
 
-      if (mod.eq.0 .or. mod.eq.1) then   ! set summation limits
+      if (mod==0 .or. mod==1) then   ! set summation limits
         ilo = ix
         ihi = ix+1
         jlo = iy
         jhi = iy+1
-      else if (abs(mod).eq.2 .or. abs(mod).eq.3 &
-                             .or. abs(mod).eq.4) then
+      else if (abs(mod)==2 .or. abs(mod)==3 &
+                             .or. abs(mod)==4) then
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
@@ -1323,8 +1323,8 @@ contains
         return
       end if
 
-      if (ilo.lt.0 .or. jlo.lt.0) return
-      if (ihi.gt.xdi+1 .or. jhi.gt.ydi+1) return
+      if (ilo<0 .or. jlo<0) return
+      if (ihi>xdi+1 .or. jhi>ydi+1) return
 
       sum = 0. 
       do i=ilo,ihi                      ! double interpolation loop
@@ -1353,7 +1353,7 @@ contains
       integer*4 i1, j1, ilin
 
       getTableVal = 0.
-      if (pid.lt.1 .or. pid.gt.nids) return
+      if (pid<1 .or. pid>nids) return
 
       xdi = xdimp(pid) ! get table dimensions
       ydi = ydimp(pid)
@@ -1363,20 +1363,20 @@ contains
 
       ilin = i1+xdi*(j1-1)    ! linearized index
 
-      if (pid.eq.2) then          ! positron
-        if (itab.eq.1) getTableVal = par2p1(ilin)
-        if (itab.eq.2) getTableVal = par2p2(ilin)
-        if (itab.eq.3) getTableVal = par2p3(ilin)
-        if (itab.eq.4) getTableVal = par2p4(ilin)
-        if (itab.eq.5) getTableVal = par2p5(ilin)
-        if (itab.eq.6) getTableVal = par2p6(ilin)
-      else if (pid.eq.3) then     ! electron
-        if (itab.eq.1) getTableVal = par3p1(ilin)
-        if (itab.eq.2) getTableVal = par3p2(ilin)
-        if (itab.eq.3) getTableVal = par3p3(ilin)
-        if (itab.eq.4) getTableVal = par3p4(ilin)
-        if (itab.eq.5) getTableVal = par3p5(ilin)
-        if (itab.eq.6) getTableVal = par3p6(ilin)
+      if (pid==2) then          ! positron
+        if (itab==1) getTableVal = par2p1(ilin)
+        if (itab==2) getTableVal = par2p2(ilin)
+        if (itab==3) getTableVal = par2p3(ilin)
+        if (itab==4) getTableVal = par2p4(ilin)
+        if (itab==5) getTableVal = par2p5(ilin)
+        if (itab==6) getTableVal = par2p6(ilin)
+      else if (pid==3) then     ! electron
+        if (itab==1) getTableVal = par3p1(ilin)
+        if (itab==2) getTableVal = par3p2(ilin)
+        if (itab==3) getTableVal = par3p3(ilin)
+        if (itab==4) getTableVal = par3p4(ilin)
+        if (itab==5) getTableVal = par3p5(ilin)
+        if (itab==6) getTableVal = par3p6(ilin)
       end if
   end function getTableVal
 
@@ -1392,18 +1392,18 @@ contains
       integer*4 i
       real*4 a, b
 
-      if (x.le.xtab(1)) then ! below table range
+      if (x<=xtab(1)) then ! below table range
         interpol = ytab(1)
         return
-      else if (x.ge.xtab(n)) then ! above table range
+      else if (x>=xtab(n)) then ! above table range
         interpol = ytab(n)
         return
       end if
 
       do i=2,n
         interpol = ytab(i)
-        if (x.eq.xtab(i)) return
-        if (x.lt.xtab(i)) goto 10
+        if (x==xtab(i)) return
+        if (x<xtab(i)) goto 10
       end do
  10   continue
 
