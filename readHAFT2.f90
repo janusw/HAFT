@@ -1,3 +1,4 @@
+!*******************************************************************************
 !  Read and interpolate Hades Acceptance Matrix for Theorists
 !
 !  Code version 2.0 of February 15, 2011
@@ -22,43 +23,53 @@
 !                 acc = getHadesAcceptance(id,mom,theta,phi,mode)
 !          3) sample pair acceptance values with calls to
 !                 acc = getHadesPairAcceptance(mass,pt,rapidity,mode)
-!
-!
-      real*4 function getHadesAcceptance(pid,p0,theta0,phi0,mode)
-!
-!  Returns HADES acceptance for particle id of given momentum (in GeV/c),
-!  polar angle theta (in deg.) and azimuthal angle phi (in deg.)
-!  by table interpolation.
-!
-!  Lab frame used: z = beam axis, y = vertical axis
-!
-!                 ^ y
-!            x \  |
-!               \ |
-!                \|    z
-!                 O---->
-!
-!  id = 2 : positron
-!     = 3 : electron
-!     = 8 : pi+
-!     = 9 : pi-
-!     = 10: K+
-!     = 12: K-
-!     = 14: proton
-!
-!  mode = 0 : nearest-neighbour interpolation
-!       = 1 : tri-linear interpolation
-!       = 2 : tri-quadratic interpolation
-!       =-2 : tri-quadratic B-spline interpolation
-!       = 3 : tri-cubic interpolation
-!       =-3 : tri-cubic B-spline interpolation
-!       = 4 : tri-cubic Catmull-Rom spline
-!       =-4 : tri-cubic optimal cardinal spline
-! 
-      implicit none
+!*******************************************************************************
+
+module HAFT_module
+
+  implicit none
+  private
+
+  public :: getHadesAcceptance, getHadesPairAcceptance
+  public :: setFileName, setPairFileName
+  public :: smearhadesmomentum, smearHades3Momentum, smearHadesPair
+  public :: setResolutionParameters, setAngularResolutionParameters
+
+contains
+
+  real*4 function getHadesAcceptance(pid,p0,theta0,phi0,mode)
+    !
+    !  Returns HADES acceptance for particle id of given momentum (in GeV/c),
+    !  polar angle theta (in deg.) and azimuthal angle phi (in deg.)
+    !  by table interpolation.
+    !
+    !  Lab frame used: z = beam axis, y = vertical axis
+    !
+    !                 ^ y
+    !            x \  |
+    !               \ |
+    !                \|    z
+    !                 O---->
+    !
+    !  id = 2 : positron
+    !     = 3 : electron
+    !     = 8 : pi+
+    !     = 9 : pi-
+    !     = 10: K+
+    !     = 12: K-
+    !     = 14: proton
+    !
+    !  mode = 0 : nearest-neighbour interpolation
+    !       = 1 : tri-linear interpolation
+    !       = 2 : tri-quadratic interpolation
+    !       =-2 : tri-quadratic B-spline interpolation
+    !       = 3 : tri-cubic interpolation
+    !       =-3 : tri-cubic B-spline interpolation
+    !       = 4 : tri-cubic Catmull-Rom spline
+    !       =-4 : tri-cubic optimal cardinal spline
       integer*4 pid, mode
       real*4 p0, theta0, phi0
-!
+
       real*4 p, theta, phi
       real*4 u, v, w
       integer*4 ix, iy, iz, i, j, k
@@ -66,15 +77,14 @@
       real*4 sum, Kx, Ky, Kz, kernel
       integer*4 xdim, ydim, zdim
       real*4 plo, pup, dp, thlo, thup, dth, phlo, phup, dph
-!
+
       integer*4 retcode, readHAFTmatrix
       real*4 getMatrixVal
       integer*4 mod_
-!
-!
+
       mod_ = -2   ! use B-spline interpolation
 !     mod = mode
-!
+
       getHadesAcceptance = 0.
 
       retcode = readHAFTmatrix()
@@ -85,12 +95,12 @@
 
       if (p0.lt.plo .or. theta0.lt.thlo .or. theta0.gt.thup) return
       if (phi0.lt.phlo) return
-!
+
       p = min(p0,pup-2.01*dp)  ! level off acceptance at high p
       theta = theta0
       phi = phi0
       if (phi .gt. 60.) phi = mod(phi,60._4)   ! modulo HADES sector
-!
+
       ix = xdim*((p-0.5*dp-plo)/(pup-plo)) + 1      ! floor indexes
       iy = ydim*((theta-0.5*dth-thlo)/(thup-thlo)) + 1
       iz = zdim*((phi-0.5*dph-phlo)/(phup-phlo)) + 1
@@ -113,10 +123,10 @@
       else  ! mode not defined
         return
       end if
-!
+
       if (ilo.lt.0 .or. jlo.lt.0 .or. klo.lt.0) return
       if (ihi.gt.xdim+1 .or. jhi.gt.ydim+1 .or. khi.gt.zdim+1) return
-!
+
       sum = 0. 
       do i=ilo,ihi                      ! triple interpolation loop
         u = (p - (real(i)-0.5)*dp-plo)/dp
@@ -132,42 +142,40 @@
         end do
       end do
       sum = max(min(sum, 1.01),0.)  ! clip over/undershoots
-!
+
       getHadesAcceptance = sum
-!
-      return
-      end
-!
-!
-!
-      real*4 function getHadesPairAcceptance(mass0,pt0,rap0,mode)
-!
-!  Returns HADES pair acceptance for given mass (in GeV/c**2),
-!  transverse momentum (in GeV/c) and rapidity (in lab frame)
-!  by table interpolation.
-!
-!  Lab frame used: z = beam axis, y = vertical axis
-!
-!                 ^ y
-!            x \  |
-!               \ |
-!                \|    z
-!                 O---->
-!
-!
-!  mode = 0 : nearest-neighbour interpolation
-!       = 1 : tri-linear interpolation
-!       = 2 : tri-quadratic interpolation
-!       =-2 : tri-quadratic B-spline interpolation
-!       = 3 : tri-cubic interpolation
-!       =-3 : tri-cubic B-spline interpolation
-!       = 4 : tri-cubic Catmull-Rom spline
-!       =-4 : tri-cubic optimal cardinal spline
-! 
-      implicit none
+
+  end
+
+
+
+  real*4 function getHadesPairAcceptance(mass0,pt0,rap0,mode)
+    !
+    !  Returns HADES pair acceptance for given mass (in GeV/c**2),
+    !  transverse momentum (in GeV/c) and rapidity (in lab frame)
+    !  by table interpolation.
+    !
+    !  Lab frame used: z = beam axis, y = vertical axis
+    !
+    !                 ^ y
+    !            x \  |
+    !               \ |
+    !                \|    z
+    !                 O---->
+    !
+    !
+    !  mode = 0 : nearest-neighbour interpolation
+    !       = 1 : tri-linear interpolation
+    !       = 2 : tri-quadratic interpolation
+    !       =-2 : tri-quadratic B-spline interpolation
+    !       = 3 : tri-cubic interpolation
+    !       =-3 : tri-cubic B-spline interpolation
+    !       = 4 : tri-cubic Catmull-Rom spline
+    !       =-4 : tri-cubic optimal cardinal spline
+    !
       integer*4 mode
       real*4 mass0, pt0, rap0
-!
+
       real*4 mass, pt, rap
       real*4 u, v, w
       integer*4 ix, iy, iz, i, j, k
@@ -175,31 +183,31 @@
       real*4 sum, Kx, Ky, Kz, kernel
       integer*4 xdim, ydim, zdim
       real*4 mlo, mup, dm, ptlo, ptup, dpt, raplo, rapup, drap
-!
+
       logical executed
       data executed /.false./
       save executed
       integer*4 retcode, readHAFTPairmatrix
       real*4 getMatrixVal
       integer*4 mod
-!
+
       getHadesPairAcceptance = 0.
       retcode = readHAFTPairMatrix()
       if (retcode.eq.-1) return
-!
+
       mod = 1    ! use trilinear interpolation
 !     mod = mode ! (use mode = 0 or 1, otherwise problems at pt=0!) 
-!
+
       call getDimensions(51,xdim,ydim,zdim)
       call getLimits(51,mlo,mup,dm,ptlo,ptup,dpt,raplo,rapup,drap) 
 
       if (mass0.lt.mlo .or. pt0.lt.ptlo .or. pt0.gt.ptup &
           .or. rap0.lt.raplo .or. rap0.gt.rapup) return
-!
+
       mass = min(mass0,mup-2.01*dm)  ! level off acceptance at high mass
       pt = pt0
       rap = rap0
-!
+
       ix = xdim*((mass-0.5*dm-mlo)/(mup-mlo)) + 1      ! floor indexes
       iy = ydim*((pt-0.5*dpt-ptlo)/(ptup-ptlo)) + 1
       iz = zdim*((rap-0.5*drap-raplo)/(rapup-raplo)) + 1
@@ -222,10 +230,10 @@
       else  ! mode not defined
         return
       end if
-!
+
       if (ilo.lt.0 .or. jlo.lt.0 .or. klo.lt.0) return
       if (ihi.gt.xdim+1 .or. jhi.gt.ydim+1 .or. khi.gt.zdim+1) return
-!
+
       sum = 0. 
       do i=ilo,ihi                      ! triple interpolation loop
         u = (mass - (real(i)-0.5)*dm-mlo)/dm
@@ -241,36 +249,33 @@
         end do
       end do
       sum = max(min(sum, 1.01),0.)  ! clip over/undershoots
-!
-      getHadesPairAcceptance = sum
-!
-      return
-      end
-!
-!
-!
-      real*4 function kernel(u,mode)
-!
-!  Compute interpolation kernel
-!
-!  mode = 0: nearest neighbour
-!       = 1: piece-wise linear
-!       = 2: piece-wise quadratic
-!       =-2: quadratic B-spline
-!       = 3: cubic spline (B=0,C=1)
-!       =-3: cubic B-spline (B=1, C=0)
-!       = 4: cubic Catmull-Rom spline (B=0, C=1/2)
-!       =-4: cubic "optimal" cardinal spline (B=1/3, C=1/3)
-!
-!  mode >=0: interpolating (i.e. exact at grid points)
-!  mode < 0: approximating (i.e. not exact, but smoother)
-!
 
-      implicit none
+      getHadesPairAcceptance = sum
+
+  end
+
+
+
+  real*4 function kernel(u,mode)
+    !
+    !  Compute interpolation kernel
+    !
+    !  mode = 0: nearest neighbour
+    !       = 1: piece-wise linear
+    !       = 2: piece-wise quadratic
+    !       =-2: quadratic B-spline
+    !       = 3: cubic spline (B=0,C=1)
+    !       =-3: cubic B-spline (B=1, C=0)
+    !       = 4: cubic Catmull-Rom spline (B=0, C=1/2)
+    !       =-4: cubic "optimal" cardinal spline (B=1/3, C=1/3)
+    !
+    !  mode >=0: interpolating (i.e. exact at grid points)
+    !  mode < 0: approximating (i.e. not exact, but smoother)
+    !
       real*4 u
       integer*4 mode
       real*4 ua
-!
+
       if (mode.eq.0) then       ! nearest neighbour
         if (u.gt.-0.5 .and. u.le.0.5) then
           kernel = 1.
@@ -278,7 +283,7 @@
           kernel = 0.
         end if
         return
-!
+
       else if (mode.eq.1) then  ! linear
         ua = abs(u)
         if (ua.lt.1.) then
@@ -287,7 +292,7 @@
           kernel = 0.
         end if
         return
-!
+
       else if (mode.eq.2) then  ! quadratic
         ua = abs(u)
         if (ua.le.0.5) then
@@ -298,7 +303,7 @@
           kernel = 0.
         end if
         return
-!
+
       else if (mode.eq.-2) then ! quadratic B-spline
         ua = abs(u)
         if (ua.le.0.5) then
@@ -309,7 +314,7 @@
           kernel = 0.
         end if
         return
-!
+
       else if (mode.eq.3) then  ! cubic
         ua = abs(u)
         if (ua.le.1.) then
@@ -320,7 +325,7 @@
           kernel = 0.
         end if
         return
-!
+
       else if (mode.eq.-3) then ! cubic B-spline
         ua = abs(u)
         if (ua.le.1.) then
@@ -331,7 +336,7 @@
           kernel = 0.
         end if
         return
-!
+
       else if (mode.eq.4) then  ! cubic Catmull-Rom
         ua = abs(u)
         if (ua.le.1.) then
@@ -342,7 +347,7 @@
           kernel = 0.
         end if
         return
-!
+
       else if (mode.eq.-4) then ! optimal cubic cardinal spline (=compromise
                                 ! between blurring and ringing)
         ua = abs(u)
@@ -354,25 +359,24 @@
           kernel = 0.
         end if
         return
-!
+
       else                      ! undefined mode
         kernel = 0.
         return
       end if
-!
-      end
-!
-!
-!
-      integer*4 function readHAFTmatrix()
-!
-!  Opens file in unformatted direct access mode
-!  and reads HADES acceptance matrices (as linearized arrays)
-!
-      implicit none
-!
+
+  end
+
+
+
+  integer*4 function readHAFTmatrix()
+    !
+    !  Opens file in unformatted direct access mode
+    !  and reads HADES acceptance matrices (as linearized arrays)
+    !
+
       include 'readHAFT2.inc'
-!
+
       integer*4 runit
       parameter (runit=77)  ! change if input unit is already busy
       integer*4 pid
@@ -380,11 +384,11 @@
       integer*4 bytes       ! byte counter
       integer*4 bins
       integer*4 lc          ! string length
-!
+
       readHAFTmatrix = 0
-!
+
       if (readflag.eq.1) return
-!
+
       readflag = 0
       do i=1,size           ! set all matrices to 0
         matrix2(i) = 0.
@@ -409,8 +413,7 @@
         phmax(i) = 0.
         dph(i) = 0.
       end do
-!
-!
+
       lc = len(fname)
       do i=1,lc
          if (fname(i:i+3).eq.'.acc') goto 1
@@ -436,10 +439,10 @@
 
       bytes = bytes + 4
       read(runit,pos=bytes,err=100) xdim(pid), ydim(pid), zdim(pid)
-!
+
       bins = xdim(pid)*ydim(pid)*zdim(pid)
       if (bins.gt.size) goto 101  ! check if enough memory available
-!
+
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) pmin(pid),pmax(pid),   &
                                     thmin(pid),thmax(pid), &
@@ -492,10 +495,10 @@
 
       bytes = bytes + 4
       read(runit,pos=bytes,err=100) xdimp(pid), ydimp(pid)
-!
+
       bins = xdimp(pid)*ydimp(pid)
       if (bins.gt.sizep) goto 101  ! check if enough memory available
-!
+
       bytes = bytes + 2*4
       read(runit,pos=bytes,err=100) pminp(pid),pmaxp(pid), &
                                     thminp(pid),thmaxp(pid)
@@ -569,15 +572,14 @@
       goto 40  ! loop until EOF is reached
 
  50   close(runit)
-!
-!
-!
+
+
       readHAFTmatrix = bytes-1 ! return number of bytes read
       readflag = 1
       return
-!
+
 !     Error opening or reading
-!
+
  99   close(runit)
       write(6,*) 'Open error on unit ', runit, ' File = ',fname(1:lc)
       readHAFTMatrix = -1
@@ -594,37 +596,34 @@
       write(6,*) 'PID not yet supported: ', pid, ' File = ',fname(1:lc)
       readHAFTmatrix = -1
       return
-      end
-!
-!
-!
-      integer*4 function readHAFTPairMatrix()
-!
-!  Opens file in unformatted direct access mode
-!  and reads HADES pair acceptance matrix (as linearized array)
-!
-      implicit none
-!
+  end
+
+
+
+  integer*4 function readHAFTPairMatrix()
+    !
+    !  Opens file in unformatted direct access mode
+    !  and reads HADES pair acceptance matrix (as linearized array)
+    !
+
       include 'readHAFT2.inc'
-!
+
       integer*4 runit
       parameter (runit=78)  ! change if input unit is already busy
       integer*4 i
       integer*4 bytes       ! byte counter
       integer*4 bins
       integer*4 lc
-!
-!
+
       readHAFTPairMatrix = 0
-!
+
       if (readflag2.eq.1) return
-!
+
       readflag2 = 0
       do i=1,size           ! set matrix to 0
         matrix51(i) = 0.
       end do
-!
-!
+
       lc = len(fname2)
       do i=1,lc
          if (fname2(i:i+3).eq.'.acc') goto 1
@@ -636,10 +635,10 @@
       write(6,'(a80)') comment2
       bytes = bytes + 80
       read(runit,pos=bytes,err=100) xdim2, ydim2, zdim2
-!
+
       bins = xdim2*ydim2*zdim2
       if (bins.gt.size) goto 101  ! check if enough memory available
-!
+
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) mmin,mmax,ptmin,ptmax,rapmin,rapmax
       bytes = bytes + 6*4
@@ -647,23 +646,23 @@
       write(6,'(''Matrix read for e+e- pairs'')')
       bytes = bytes + bins*4
       close(runit)
-!
+
       dm = (mmax-mmin)/real(xdim2)
       dpt = (ptmax-ptmin)/real(ydim2)
       drap = (rapmax-rapmin)/real(zdim2)
-!
+
       write(6,'('' coms= '',a80)') comment2
       write(6,*) 'dims= ',xdim2, ' ', ydim2, ' ', zdim2
       write(6,*) 'lims= ',mmin, ' ', mmax, ' ', ptmin, ' ', ptmax, &
                  ' ', rapmin, ' ', rapmax
       write(6,*) 'size of matrix :', bins
-!
+
       readHAFTPairMatrix = bytes-1 ! return number of bytes read
       readflag2 = 1
       return
-!
+
 !     Error opening or reading
-!
+
  99   close(runit)
       write(6,*) 'Open error on unit ', runit, ' File = ',fname2(1:lc)
       readHAFTPairMatrix = -1
@@ -676,17 +675,17 @@
       write(6,*) 'Size error: ', bins,' >',size, ' File = ',fname2(1:lc)
       readHAFTPairMatrix = -1
       return
-      end
-!
-!
-!
-      subroutine setFileName(name)
-!
-!  Sets name of input file containing the filter
-!
-      implicit none
+  end
+
+
+
+  subroutine setFileName(name)
+    !
+    !  Sets name of input file containing the filter
+    !
+
       character*(*) name
-!
+
       include 'readHAFT2.inc'
       integer*4 dummy, readHAFTmatrix
 
@@ -696,18 +695,17 @@
 !      write(6,'(''name  |'',a80,''|'')') name
 !      write(6,'(''fname |'',a80,''|'')') fname
 
-      return
-      end
-!
-!
-!
-      subroutine setPairFileName(name)
-!
-!  Sets name of input file containing the filter
-!
-      implicit none
+  end
+
+
+
+  subroutine setPairFileName(name)
+    !
+    !  Sets name of input file containing the filter
+    !
+
       character*(*) name
-!
+
       include 'readHAFT2.inc'
       integer*4 dummy, readHAFTPairMatrix
 
@@ -717,30 +715,29 @@
 !      write(6,'(''name  |'',a80,''|'')') name
 !      write(6,'(''fname2 |'',a80,''|'')') fname2
 
-      return
-      end
-!
-!
-!
-      real*4 function getMatrixVal(i,j,k,pid)
-!
-!  Returns acceptance value at cell (i,j,k) of linearized matrix
-!  for particle ID
-!
-      implicit none
+  end
+
+
+
+  real*4 function getMatrixVal(i,j,k,pid)
+    !
+    !  Returns acceptance value at cell (i,j,k) of linearized matrix
+    !  for particle ID
+    !
+
       integer*4 i, j, k, pid
-!
+
       include 'readHAFT2.inc'
-!
+
       integer*4 xdi, ydi, zdi
       integer*4 i1, j1, k1, ilin
-!
+
       call getDimensions(pid,xdi,ydi,zdi)
 
       i1 = min(max(1,i),xdi)  ! Make sure indexes stay within table.
       j1 = min(max(1,j),ydi)  ! This effectively extrapolates matrix
       k1 = min(max(1,k),zdi)  ! beyond table boundaries.
-!
+
       ilin = i1+xdi*(j1-1)+xdi*ydi*(k1-1)  ! linearized index
       if (pid.eq.2) then          ! positron
         getMatrixVal = matrix2(ilin)
@@ -770,20 +767,20 @@
         getMatrixVal = 0.
         return
       end if
-      end
-!
-!
-!
-      subroutine getLimits(pid,xlo,xhi,dx,ylo,yhi,dy,zlo,zhi,dz) 
-!
-!  Return the lower and upper limits, and step sizes of the table
-!
-      implicit none
+  end
+
+
+
+  subroutine getLimits(pid,xlo,xhi,dx,ylo,yhi,dy,zlo,zhi,dz) 
+    !
+    !  Return the lower and upper limits, and step sizes of the table
+    !
+
       integer*4 pid
       real*4 xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
-!
+
       include 'readHAFT2.inc'
-!
+
       if (pid.eq.51) then  ! pair
         xlo  = mmin
         xhi  = mmax
@@ -807,19 +804,19 @@
         dz = dph(pid)
         return
       end if
-      end
-!
-!
-!
-      subroutine getDimensions(pid,nx,ny,nz)
-!
-!  Return the dimensions of a table of particle pid
-!
-      implicit none
+  end
+
+
+
+  subroutine getDimensions(pid,nx,ny,nz)
+    !
+    !  Return the dimensions of a table of particle pid
+    !
+
       integer*4 pid, nx, ny, nz
-!
+
       include 'readHAFT2.inc'
-!
+
       if (pid.eq.51) then  ! pair
         nx  = xdim2
         ny = ydim2
@@ -829,41 +826,40 @@
         ny = ydim(pid)
         nz = zdim(pid)
       end if
-      return
-      end
-!
-!
-!
-      subroutine smearHades4Momentum(mom,mode,pid)
-!
-!  Apply the Hades momentum resolution to a 4-momentum vector (in GeV/c)
-!
-!  Lab frame used: z = beam axis, y = vertical axis
-!
-!                 ^ y
-!            x \  |
-!               \ |
-!                \|    z
-!                 O---->
-!
-!  All components of the 4-momentum vector are changed by this call.
-!
-!  If parameter tables are loaded, the particle momentum is smeared according
-!  to an asymmetric response function, if not, default gaussian sampling is used.
-!
-!  The default resolution mode is determined by:
-!
-!   mode = 1 : low-resolution     (MDC 1+2)
-!        = 2 : medium-resolution  (MDC 1+2+3)
-!        = 3 : high-resolution    (MDC 1+2+3+4)
-!
-!
-      implicit none
+  end
+
+
+
+  subroutine smearHades4Momentum(mom,mode,pid)
+    !
+    !  Apply the Hades momentum resolution to a 4-momentum vector (in GeV/c)
+    !
+    !  Lab frame used: z = beam axis, y = vertical axis
+    !
+    !                 ^ y
+    !            x \  |
+    !               \ |
+    !                \|    z
+    !                 O---->
+    !
+    !  All components of the 4-momentum vector are changed by this call.
+    !
+    !  If parameter tables are loaded, the particle momentum is smeared according
+    !  to an asymmetric response function, if not, default gaussian sampling is used.
+    !
+    !  The default resolution mode is determined by:
+    !
+    !   mode = 1 : low-resolution     (MDC 1+2)
+    !        = 2 : medium-resolution  (MDC 1+2+3)
+    !        = 3 : high-resolution    (MDC 1+2+3+4)
+    !
+    !
+
       real*4 mom(4)
       integer*4 mode,pid
-!
+
       include 'readHAFT2.inc'
-!
+
       integer*4 retcode, readHAFTmatrix
       real*4 mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
       real*4 sigp, sampleGauss, betainv, sigms, sigms2, sigthms, sigphms
@@ -872,13 +868,12 @@
       real*4 ploss
       real*4 respar(10), param, sampleMP
       integer*4 i
-!
+
       if (readflag.eq.0) then
         retcode = readHAFTmatrix()
         if (retcode.eq.-1) return
       end if
-!
-!
+
       pt2 = mom(1)**2 + mom(2)**2
       pt = sqrt(pt2)
       ptot2 = pt2 + mom(3)**2
@@ -893,7 +888,6 @@
       sigms2 = sigms*sigms
       sigthms = sqrt(sigth*sigth+sigms2)      ! add quadratically to resolution
       sigphms = sqrt(sigph*sigph+sigms2)
-!
 
       if (pid.eq.2 .or. pid.eq.3) then  ! leptons, use Ar+KCl embedding values
          sigthms = 0.00246/ptot + 0.00045
@@ -905,9 +899,9 @@
       phi = 0.
       if (pt.gt.0.) phi = acos(mom(1)/pt)
       if (mom(2).lt.0.) phi = twopi - phi     ! azimuthal angle in radian
-!
+
 !  If resolution parameters are available, use dedicated smearing
-!
+
       if (resflag(pid).eq.1) then   ! resolution parameters are loaded for pid?
 
 !        write(6,*) mom(1), mom(2), mom(3), mass, ptot, r2d*theta
@@ -944,19 +938,18 @@
       if (sinth.gt.0.01) phi = sampleGauss(phi,sigphms/sinth) ! smear azimuth
       if (phi.lt.0.) phi = phi + twopi        ! and check if within range 
       if (phi.gt.twopi) phi = phi - twopi
-!
+
       sinth = sin(theta)
       mom(1) = ptot*sinth*cos(phi)            ! new momentum components
       mom(2) = ptot*sinth*sin(phi)
       mom(3) = ptot*cos(theta)
       mom(4) = sqrt(mom(1)**2 + mom(2)**2 + mom(3)**2 + mass2)  ! total energy
-!
-      return
-      end
-!
-!
-!
-      subroutine smearHadesMomentum(p,mode,pid)
+
+  end
+
+
+
+  subroutine smearHadesMomentum(p,mode,pid)
       real*8 p(0:3)
       integer*4 mode, pid
       real*4 mom4(4)
@@ -965,23 +958,23 @@
       call smearHades4Momentum(mom4,mode,pid)
       p(1:3) = mom4(1:3)
       p(0) = mom4(4)
-      end
-!
-!
-!
-      subroutine smearHades3Momentum(mom3,mode,pid)
-!
-!  Apply Hades momentum resolution to a 3-momentum (calculate multiple
-!  scattering assuming the particle is an electron) 
-!
-      implicit none
+  end
+
+
+
+  subroutine smearHades3Momentum(mom3,mode,pid)
+    !
+    !  Apply Hades momentum resolution to a 3-momentum (calculate multiple
+    !  scattering assuming the particle is an electron) 
+    !
+
       real*4 mom3(3)
       integer*4 mode,pid
       real*4 mom4(4)
       real*4 mass
-!
+
       if (mode.lt.1 .or. mode.gt.3) return    ! unknown mode
-!
+
       if (pid.eq.2 .or. pid.eq.3) then        ! e+ or e-
          mass = 0.000510998918
       else if (pid.eq.8 .or. pid.eq.9) then   ! pi+ or pi- 
@@ -1002,26 +995,25 @@
       mom3(1) = mom4(1)
       mom3(2) = mom4(2)
       mom3(3) = mom4(3)
-      return
-      end
-!
-!
-!
-      subroutine smearHadesPair(pair,mode)
-!
-!  Apply Hades momentum resolution to a pair (calculate multiple
-!  scattering assuming the particle is an electron) 
-!
-      implicit none
+  end
+
+
+
+  subroutine smearHadesPair(pair,mode)
+    !
+    !  Apply Hades momentum resolution to a pair (calculate multiple
+    !  scattering assuming the particle is an electron) 
+    !
+
       real*4 pair(3)
       integer*4 mode
-!
+
       include 'readHAFT2.inc'
-!
+
       real*4 m, pt, rap, sigpt, sigm, sigrap
       real*4 sampleGauss
       integer*4 retcode, readHAFTmatrix
-!
+
       real*4 mtab(10), par1(10), par2(10), par3(10), par4(10), par5(10)
       data mtab /0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2/  ! mass grid
       data par1 /0.0077, -0.0082, -0.0125, -0.0120, -0.0114, &
@@ -1033,14 +1025,14 @@
       data par4 /-10.0, -15.4, -20.4, -23.1, -22.3, &
                  -21.6, -20.6, -19.4, -18.2, -17.9/
       data par5 /18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7/
-!
+
       real*4 respar(10), interpol, sampleMP
-!
+
       if (readflag.eq.0) then
         retcode = readHAFTmatrix()
         if (retcode.eq.-1) return
       end if
-!
+
       m = pair(1)
       pt = pair(2)
       rap = pair(3)
@@ -1072,39 +1064,36 @@
       pair(1) = m
       pair(2) = pt
       pair(3) = rap
-      return
-      end
-!
-!
-!
-      real*4 function sampleGauss(mean,sigma)
-!
-!  Return random number according to a normal distribution.
-!
-!  Calls ran(iseed), a uniform random number generator returning ]0,1[.
-!
-      implicit none
-!
+  end
+
+
+
+  real*4 function sampleGauss(mean,sigma)
+    !
+    !  Return random number according to a normal distribution.
+    !
+    !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
+    !
+
       include 'readHAFT2.inc'
-!
+
       real*4 mean, sigma
       real*4 pi, twopi
       parameter (pi=3.141592654, twopi=2.*pi)
       real*4 theta
-!
+
       sampleGauss = mean
       if (sigma.le.0.) return
       theta = twopi*ran(iseed)
       sampleGauss = mean + sigma*cos(theta)*sqrt(-2.*log(ran(iseed)))
-      return
-      end
-!
-!
-!
-      real*4 function momSpread(x,respar,ns)
-!
-!     HADES momentum spread (pRec-pSim)/pSim
-!
+  end
+
+
+
+  real*4 function momSpread(x,respar,ns)
+    !
+    !     HADES momentum spread (pRec-pSim)/pSim
+    !
       real*4 x
       real*4 respar(10)
       real*4 ns
@@ -1147,21 +1136,19 @@
              + amp*exp( right*(x-(pos-ns*sig)) )*argp                   &  ! right tail (Gauss sits on top of it)
              + 0.1*amp*exp( farleft*(x-(-lg10/left+pos-ns*sig)) )*argn2 &  ! far left tail
                                                                         &  ! (joins left tail where decayed to 1/10)
-      return
-      end
-!
-!
-!
-      real*4 function sampleMP(respar,ns)
-!
-!  Return random number according to the normalized HADES momentum distribution.
-!
-!  Calls ran(iseed), a uniform random number generator returning ]0,1[.
-!
-      implicit none
-!
+  end
+
+
+
+  real*4 function sampleMP(respar,ns)
+    !
+    !  Return random number according to the normalized HADES momentum distribution.
+    !
+    !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
+    !
+
       include 'readHAFT2.inc'
-!
+
       real*4 respar(10), ns
       real*4 pos, sig, left, right, farleft
       real*4 A0, A1, A2, A3
@@ -1198,9 +1185,8 @@
       F1 = F1/F
       F2 = F2/F
       F3 = F3/F
-!
+
 !    sample dx by comparing with piece-wise function
-!
 
       do cnt=1,1000    ! allow max 1000 trials
          cnt1 = 0
@@ -1256,19 +1242,16 @@
 
       write(6,*) 'cnt=1000'
       sampleMP = 0.
-      return
 
-      end
+  end
 
-!
-!
-!
-      subroutine setResolutionParameters(mode,a,b)
-!
-!     Set momentum resolution parameters
-!
-      implicit none
-!
+
+
+  subroutine setResolutionParameters(mode,a,b)
+    !
+    !     Set momentum resolution parameters
+    !
+
       include 'readHAFT2.inc'
 
       real*4 a, b
@@ -1282,17 +1265,15 @@
       write(6,*) 'mode=1   ', ' ', sigpA(1), ' ', sigpB(1)
       write(6,*) 'mode=2   ', ' ', sigpA(2), ' ', sigpB(2)
       write(6,*) 'mode=3   ', ' ', sigpA(3), ' ', sigpB(3)
-      return
-      end
-!
-!
-!
-      subroutine setAngularResolutionParameters(stheta,sphi)
-!
-!     Set angular resolution parameters
-!
-      implicit none
-!
+  end
+
+
+
+  subroutine setAngularResolutionParameters(stheta,sphi)
+    !
+    !     Set angular resolution parameters
+    !
+
       include 'readHAFT2.inc'
 
       real*4 stheta, sphi
@@ -1303,18 +1284,16 @@
       endif
 
       write(6,*) 'dTh, dPh:', ' ', sigth, ' ', sigph
-      return
-      end
-!
-!
-!
-      real*4 function param(pin,thin,pid,itab)
-!
-!     Interpolate resolution parameter table as function
-!     of momentum and theta (pin in GeV/c and theta in degree)
-!
-      implicit none
-!
+  end
+
+
+
+  real*4 function param(pin,thin,pid,itab)
+    !
+    !     Interpolate resolution parameter table as function
+    !     of momentum and theta (pin in GeV/c and theta in degree)
+    !
+
       include 'readHAFT2.inc'
 
       real*4 pin, thin
@@ -1329,7 +1308,7 @@
       mod = 1
       param = 0.
       if (pid.lt.1 .or. pid.gt.nids) return
-      
+
       p = pin
       th = thin
       plo = pminp(pid)
@@ -1345,7 +1324,7 @@
 
       xdi = xdimp(pid) ! get table dimensions
       ydi = ydimp(pid)
-!
+
       ix = xdi*((p-0.5*dp0-plo)/(pup-plo)) + 1      ! floor indices
       iy = ydi*((th-0.5*dth0-thlo)/(thup-thlo)) + 1
 
@@ -1363,10 +1342,10 @@
       else  ! mode not defined
         return
       end if
-!
+
       if (ilo.lt.0 .or. jlo.lt.0) return
       if (ihi.gt.xdi+1 .or. jhi.gt.ydi+1) return
-!
+
       sum = 0. 
       do i=ilo,ihi                      ! double interpolation loop
         u = (p - (real(i)-0.5)*dp0-plo)/dp0
@@ -1377,27 +1356,25 @@
           sum = sum + getTableVal(i,j,pid,itab)*Kx*Ky
         end do
       end do
-!
+
       param = sum
-!
-      return
-      end
-!
-!
-!
-      real*4 function getTableVal(i,j,pid,itab)
-!
-!  Returns acceptance value at cell (i,j) of linearized
-!  parameter table for particle ID
-!
-      implicit none
+  end
+
+
+
+  real*4 function getTableVal(i,j,pid,itab)
+    !
+    !  Returns acceptance value at cell (i,j) of linearized
+    !  parameter table for particle ID
+    !
+
       integer*4 i, j, pid, itab
-!
+
       include 'readHAFT2.inc'
-!
+
       integer*4 xdi, ydi
       integer*4 i1, j1, ilin
-!
+
       getTableVal = 0.
       if (pid.lt.1 .or. pid.gt.nids) return
 
@@ -1406,7 +1383,7 @@
 
       i1 = min(max(1,i),xdi)  ! Make sure indexes stay within table.
       j1 = min(max(1,j),ydi)  ! This effectively extrapolates matrix
-!
+
       ilin = i1+xdi*(j1-1)    ! linearized index
 
       if (pid.eq.2) then          ! positron
@@ -1424,17 +1401,15 @@
         if (itab.eq.5) getTableVal = par3p5(ilin)
         if (itab.eq.6) getTableVal = par3p6(ilin)
       end if
+  end
 
-      return
-      end
-!
-!
-!
-      real*4 function interpol(x,xtab,ytab,n)
-!
-!     linear interpolation in table (xtab,ytab) 
-!
-      implicit none
+
+
+  real*4 function interpol(x,xtab,ytab,n)
+    !
+    !     linear interpolation in table (xtab,ytab) 
+    !
+
       real*4 x, xtab(*), ytab(*)
       integer*4 n, i
       real*4 a, b
@@ -1453,20 +1428,19 @@
         if (x.lt.xtab(i)) goto 10
       end do
  10   continue
-      
+
       a = ytab(i-1)
       b = (ytab(i)-ytab(i-1))/(xtab(i)-xtab(i-1))
       interpol = a + (x-xtab(i-1))*b
+  end
 
-      return
-      end
-!
-!
-!
+end module
+
+
       block data blockHAFT
-!
-!  Needed to provide a default file name and random number seed
-!
+    !
+    !  Needed to provide a default file name and random number seed
+    !
       implicit none
       include 'readHAFT2.inc'
       data fname /'HadesAcceptanceFilter.acc'/
