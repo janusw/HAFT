@@ -28,10 +28,12 @@ module HAFT
   implicit none
   private
 
+
   public :: getHadesAcceptance, getHadesPairAcceptance
   public :: setFileName, setPairFileName
   public :: smearhadesmomentum, smearHades3Momentum, smearHadesPair
   public :: setResolutionParameters, setAngularResolutionParameters
+
 
   !  HAFT declaration of acceptance matrix arrays and resolution tables
   !  The dimensions MUST match all array sizes in the file!
@@ -60,7 +62,9 @@ module HAFT
   real*4, dimension(sizep) :: par2p1, par2p2, par2p3, par2p4, par2p5, par2p6
   real*4, dimension(sizep) :: par3p1, par3p2, par3p3, par3p4, par3p5, par3p6
 
+
 contains
+
 
   real*4 function getHadesAcceptance(pid,p0,theta0,phi0,mode)
     !
@@ -170,7 +174,7 @@ contains
 
       getHadesAcceptance = sum
 
-  end
+  end function getHadesAcceptance
 
 
 
@@ -277,7 +281,7 @@ contains
 
       getHadesPairAcceptance = sum
 
-  end
+  end function getHadesPairAcceptance
 
 
 
@@ -390,7 +394,7 @@ contains
         return
       end if
 
-  end
+  end function kernel
 
 
 
@@ -619,7 +623,7 @@ contains
       write(6,*) 'PID not yet supported: ', pid, ' File = ',fname(1:lc)
       readHAFTmatrix = -1
       return
-  end
+  end function readHAFTmatrix
 
 
 
@@ -696,7 +700,7 @@ contains
       write(6,*) 'Size error: ', bins,' >',size, ' File = ',fname2(1:lc)
       readHAFTPairMatrix = -1
       return
-  end
+  end function readHAFTPairMatrix
 
 
 
@@ -715,7 +719,7 @@ contains
 !      write(6,'(''name  |'',a80,''|'')') name
 !      write(6,'(''fname |'',a80,''|'')') fname
 
-  end
+  end subroutine setFileName
 
 
 
@@ -734,7 +738,7 @@ contains
 !      write(6,'(''name  |'',a80,''|'')') name
 !      write(6,'(''fname2 |'',a80,''|'')') fname2
 
-  end
+  end subroutine setPairFileName
 
 
 
@@ -784,7 +788,7 @@ contains
         getMatrixVal = 0.
         return
       end if
-  end
+  end function getMatrixVal
 
 
 
@@ -819,7 +823,7 @@ contains
         dz = dph(pid)
         return
       end if
-  end
+  end subroutine getLimits
 
 
 
@@ -839,7 +843,7 @@ contains
         ny = ydim(pid)
         nz = zdim(pid)
       end if
-  end
+  end subroutine getDimensions
 
 
 
@@ -956,7 +960,7 @@ contains
       mom(3) = ptot*cos(theta)
       mom(4) = sqrt(mom(1)**2 + mom(2)**2 + mom(3)**2 + mass2)  ! total energy
 
-  end
+  end subroutine smearHades4Momentum
 
 
 
@@ -969,7 +973,7 @@ contains
       call smearHades4Momentum(mom4,mode,pid)
       p(1:3) = mom4(1:3)
       p(0) = mom4(4)
-  end
+  end subroutine smearHadesMomentum
 
 
 
@@ -1006,7 +1010,7 @@ contains
       mom3(1) = mom4(1)
       mom3(2) = mom4(2)
       mom3(3) = mom4(3)
-  end
+  end subroutine smearHades3Momentum
 
 
 
@@ -1073,7 +1077,7 @@ contains
       pair(1) = m
       pair(2) = pt
       pair(3) = rap
-  end
+  end subroutine smearHadesPair
 
 
 
@@ -1093,7 +1097,7 @@ contains
       if (sigma.le.0.) return
       theta = twopi*ran(iseed)
       sampleGauss = mean + sigma*cos(theta)*sqrt(-2.*log(ran(iseed)))
-  end
+  end function sampleGauss
 
 
 
@@ -1143,7 +1147,7 @@ contains
              + amp*exp( right*(x-(pos-ns*sig)) )*argp                   &  ! right tail (Gauss sits on top of it)
              + 0.1*amp*exp( farleft*(x-(-lg10/left+pos-ns*sig)) )*argn2 &  ! far left tail
                                                                         &  ! (joins left tail where decayed to 1/10)
-  end
+  end function momSpread
 
 
 
@@ -1248,7 +1252,7 @@ contains
       write(6,*) 'cnt=1000'
       sampleMP = 0.
 
-  end
+  end function sampleMP
 
 
 
@@ -1268,7 +1272,7 @@ contains
       write(6,*) 'mode=1   ', ' ', sigpA(1), ' ', sigpB(1)
       write(6,*) 'mode=2   ', ' ', sigpA(2), ' ', sigpB(2)
       write(6,*) 'mode=3   ', ' ', sigpA(3), ' ', sigpB(3)
-  end
+  end subroutine setResolutionParameters
 
 
 
@@ -1285,7 +1289,7 @@ contains
       endif
 
       write(6,*) 'dTh, dPh:', ' ', sigth, ' ', sigph
-  end
+  end subroutine setAngularResolutionParameters
 
 
 
@@ -1357,7 +1361,7 @@ contains
       end do
 
       param = sum
-  end
+  end function param
 
 
 
@@ -1398,7 +1402,7 @@ contains
         if (itab.eq.5) getTableVal = par3p5(ilin)
         if (itab.eq.6) getTableVal = par3p6(ilin)
       end if
-  end
+  end function getTableVal
 
 
 
@@ -1429,6 +1433,7 @@ contains
       a = ytab(i-1)
       b = (ytab(i)-ytab(i-1))/(xtab(i)-xtab(i-1))
       interpol = a + (x-xtab(i-1))*b
-  end
+  end function interpol
+
 
 end module
