@@ -216,9 +216,6 @@ contains
       integer*4 xdim, ydim, zdim
       real*4 mlo, mup, dm, ptlo, ptup, dpt, raplo, rapup, drap
 
-      logical executed
-      data executed /.false./
-      save executed
       integer*4 retcode, readHAFTPairmatrix
       real*4 getMatrixVal
       integer*4 mod
@@ -1009,17 +1006,16 @@ contains
       real*4 sampleGauss
       integer*4 retcode, readHAFTmatrix
 
-      real*4 mtab(10), par1(10), par2(10), par3(10), par4(10), par5(10)
-      data mtab /0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2/  ! mass grid
-      data par1 /0.0077, -0.0082, -0.0125, -0.0120, -0.0114, &
-                -0.0106, -0.0098, -0.0085, -0.0078, -0.0075/
-      data par2 /0.0820, 0.0460, 0.0260, 0.0210, 0.0190, &
-                 0.0183, 0.0182, 0.0181, 0.0180, 0.0180/
-      data par3 /13.5, 16.2, 19.9, 20.2, 19.2, &
-                 18.0, 16.9, 14.8, 12.8, 11.0/
-      data par4 /-10.0, -15.4, -20.4, -23.1, -22.3, &
-                 -21.6, -20.6, -19.4, -18.2, -17.9/
-      data par5 /18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7/
+      real*4, parameter :: mtab(10) = (/ 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2 /)  ! mass grid
+      real*4, parameter :: par1(10) = (/ 0.0077, -0.0082, -0.0125, -0.0120, -0.0114, &
+                                        -0.0106, -0.0098, -0.0085, -0.0078, -0.0075 /)
+      real*4, parameter :: par2(10) = (/ 0.0820, 0.0460, 0.0260, 0.0210, 0.0190, &
+                                         0.0183, 0.0182, 0.0181, 0.0180, 0.0180 /)
+      real*4, parameter :: par3(10) = (/ 13.5, 16.2, 19.9, 20.2, 19.2, &
+                                         18.0, 16.9, 14.8, 12.8, 11.0 /)
+      real*4, parameter :: par4(10) = (/-10.0, -15.4, -20.4, -23.1, -22.3, &
+                                        -21.6, -20.6, -19.4, -18.2, -17.9 /)
+      real*4, parameter :: par5(10) = (/ 18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7 /)
 
       real*4 respar(10), interpol, sampleMP
 
