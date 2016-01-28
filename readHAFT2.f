@@ -12,6 +12,7 @@ c  Modified : 15/04/08 R. Holzmann  added function to set resolution (v1.1)
 c  Modified : 07/02/09 R. Holzmann  added p-dependant Eloss in smear4momentum()
 c  Modified : 16/04/09 R. Holzmann  theta and phi resolution from Ar+KCl embedding
 c  Modified:  15/02/11 R. Holzmann  added support for non-gaussian momentum smearing 
+c  Mofified:  20/04/11 J. Weil      use stream I/O, generic intrinsics, etc
 c
 c  Files needed : readHAFT2.inc
 c
@@ -68,10 +69,10 @@ c
 c
       integer*4 retcode, readHAFTmatrix
       real*4 getMatrixVal
-      integer*4 mod
+      integer*4 mod_
 c
 c
-      mod = -2   ! use B-spline interpolation
+      mod_ = -2   ! use B-spline interpolation
 c     mod = mode
 c
       getHadesAcceptance = 0.
@@ -85,24 +86,24 @@ c
       if (p0.lt.plo .or. theta0.lt.thlo .or. theta0.gt.thup) return
       if (phi0.lt.phlo) return
 c
-      p = amin1(p0,pup-2.01*dp)  ! level off acceptance at high p
+      p = min(p0,pup-2.01*dp)  ! level off acceptance at high p
       theta = theta0
       phi = phi0
-      if (phi. gt. 60.) phi = amod(phi,60.)   ! modulo HADES sector
+      if (phi .gt. 60.) phi = mod(phi,60._4)   ! modulo HADES sector
 c
       ix = xdim*((p-0.5*dp-plo)/(pup-plo)) + 1      ! floor indexes
       iy = ydim*((theta-0.5*dth-thlo)/(thup-thlo)) + 1
       iz = zdim*((phi-0.5*dph-phlo)/(phup-phlo)) + 1
 
-      if (mod.eq.0 .or. mod.eq.1) then   ! set summation limits
+      if (mod_.eq.0 .or. mod_.eq.1) then   ! set summation limits
         ilo = ix
         ihi = ix+1
         jlo = iy
         jhi = iy+1
         klo = iz
         khi = iz+1
-      else if (abs(mod).eq.2 .or. abs(mod).eq.3
-     +                       .or. abs(mod).eq.4) then
+      else if (abs(mod_).eq.2 .or. abs(mod_).eq.3
+     +                        .or. abs(mod_).eq.4) then
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
@@ -119,18 +120,18 @@ c
       sum = 0. 
       do i=ilo,ihi                      ! triple interpolation loop
         u = (p - (real(i)-0.5)*dp-plo)/dp
-        Kx = kernel(u,mod)
+        Kx = kernel(u,mod_)
         do j=jlo,jhi
           v = (theta - (real(j)-0.5)*dth-thlo)/dth
-          Ky = kernel(v,mod)
+          Ky = kernel(v,mod_)
           do k=klo,khi
             w = (phi - (real(k)-0.5)*dph-phlo)/dph
-            Kz = kernel(w,mod)
+            Kz = kernel(w,mod_)
             sum = sum + getMatrixVal(i,j,k,pid)*Kx*Ky*Kz
           end do
         end do
       end do
-      sum = amax1(amin1(sum, 1.01),0.0)  ! clip over/undershoots
+      sum = max(min(sum, 1.01),0.)  ! clip over/undershoots
 c
       getHadesAcceptance = sum
 c
@@ -182,6 +183,7 @@ c
       real*4 getMatrixVal
       integer*4 mod
 c
+      getHadesPairAcceptance = 0.
       retcode = readHAFTPairMatrix()
       if (retcode.eq.-1) return
 c
@@ -191,11 +193,10 @@ c
       call getDimensions(51,xdim,ydim,zdim)
       call getLimits(51,mlo,mup,dm,ptlo,ptup,dpt,raplo,rapup,drap) 
 
-      getHadesPairAcceptance = 0.
       if (mass0.lt.mlo .or. pt0.lt.ptlo .or. pt0.gt.ptup
      +    .or. rap0.lt.raplo .or. rap0.gt.rapup) return
 c
-      mass = amin1(mass0,mup-2.01*dm)  ! level off acceptance at high mass
+      mass = min(mass0,mup-2.01*dm)  ! level off acceptance at high mass
       pt = pt0
       rap = rap0
 c
@@ -239,7 +240,7 @@ c
           end do
         end do
       end do
-      sum = amax1(amin1(sum, 1.01),0.0)  ! clip over/undershoots
+      sum = max(min(sum, 1.01),0.)  ! clip over/undershoots
 c
       getHadesPairAcceptance = sum
 c
@@ -375,7 +376,7 @@ c
       integer*4 runit
       parameter (runit=77)  ! change if input unit is already busy
       integer*4 pid
-      integer*4 i, j, k, n
+      integer*4 i
       integer*4 bytes       ! byte counter
       integer*4 bins
       integer*4 lc          ! string length
@@ -415,58 +416,55 @@ c
          if (fname(i:i+3).eq.'.acc') goto 1
       end do
  1    lc = i+3
-      open(unit=runit, file=fname, form='unformatted', access='direct',
-     +     status='old',recl=1, err=99)  ! g77 on linux
-c     open(unit=runit, file=fname, form='binary', access='direct',
-c    +     status='old',recl=1, err=99)  ! Compaq f90 on MS Windows
+      open(unit=runit,file=fname,access='stream',status='old',err=99)
       bytes=1
       write(6,*) ' '
-      read(runit,rec=bytes,err=100) comment
+      read(runit,pos=bytes,err=100) comment
       write(6,'(a80)') comment
       write(6,*) '--------------------------------------'
       bytes = bytes + 80
-      read(runit,rec=bytes,err=100) sigpA(1), sigpA(2), sigpA(3),
+      read(runit,pos=bytes,err=100) sigpA(1), sigpA(2), sigpA(3),
      +                              sigpB(1), sigpB(2), sigpB(3),
      +                              sigth, sigph, XX0
       bytes = bytes + 9*4
 
- 40   read(runit,rec=bytes,err=50) pid  ! break out if EOF reached
+ 40   read(runit,pos=bytes,end=50,err=100) pid  ! break out if EOF reached
       if (pid.lt.0) goto 45
       if (pid.lt.1 .or. pid.gt.nids) goto 50
 
 cccccccccccccccc read acceptance matrix 
 
       bytes = bytes + 4
-      read(runit,rec=bytes,err=100) xdim(pid), ydim(pid), zdim(pid)
+      read(runit,pos=bytes,err=100) xdim(pid), ydim(pid), zdim(pid)
 c
       bins = xdim(pid)*ydim(pid)*zdim(pid)
       if (bins.gt.size) goto 101  ! check if enough memory available
 c
       bytes = bytes + 3*4
-      read(runit,rec=bytes,err=100) pmin(pid),pmax(pid),
+      read(runit,pos=bytes,err=100) pmin(pid),pmax(pid),
      +                              thmin(pid),thmax(pid),
      +                              phmin(pid),phmax(pid)
       bytes = bytes + 6*4
       if (pid.eq.2) then        ! positron
-        read(runit,rec=bytes,err=100) (matrix2(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (matrix2(i),i=1,bins)
         write(6,'(''Matrix read for e+'')')
       else if (pid.eq.3) then     ! electron
-        read(runit,rec=bytes,err=100) (matrix3(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (matrix3(i),i=1,bins)
         write(6,'(''Matrix read for e-'')')
       else if (pid.eq.8) then     ! pi+
-        read(runit,rec=bytes,err=100) (matrix8(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (matrix8(i),i=1,bins)
         write(6,'(''Matrix read for pi+'')')
       else if (pid.eq.9) then     ! pi-
-        read(runit,rec=bytes,err=100) (matrix9(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (matrix9(i),i=1,bins)
         write(6,'(''Matrix read for pi-'')')
       else if (pid.eq.10) then    ! K+
-        read(runit,rec=bytes,err=100) (matrix10(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (matrix10(i),i=1,bins)
         write(6,'(''Matrix read for K+'')')
       else if (pid.eq.12) then    ! K-
-        read(runit,rec=bytes,err=100) (matrix12(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (matrix12(i),i=1,bins)
         write(6,'(''Matrix read for K-'')')
       else if (pid.eq.14) then    ! proton
-        read(runit,rec=bytes,err=100) (matrix14(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (matrix14(i),i=1,bins)
         write(6,'(''Matrix read for p'')')
       else
         write(6,'(''Unsupported particle ID: '',I3,''  STOP!'')')
@@ -493,62 +491,62 @@ cccccccccccccccc read resolution parameters
       if (pid.lt.2 .or. pid.gt.3) goto 102
 
       bytes = bytes + 4
-      read(runit,rec=bytes,err=100) xdimp(pid), ydimp(pid)
+      read(runit,pos=bytes,err=100) xdimp(pid), ydimp(pid)
 c
       bins = xdimp(pid)*ydimp(pid)
       if (bins.gt.sizep) goto 101  ! check if enough memory available
 c
       bytes = bytes + 2*4
-      read(runit,rec=bytes,err=100) pminp(pid),pmaxp(pid),
+      read(runit,pos=bytes,err=100) pminp(pid),pmaxp(pid),
      +                              thminp(pid),thmaxp(pid)
       bytes = bytes + 4*4
-      read(runit,rec=bytes,err=100) ntab ! nb. of parameter tables
+      read(runit,pos=bytes,err=100) ntab ! nb. of parameter tables
       bytes = bytes + 4
       if (pid.eq.2) then          ! positron
-        read(runit,rec=bytes,err=100) (par2p1(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (par2p1(i),i=1,bins)
         bytes = bytes + bins*4
         if (ntab.gt.1) then
-          read(runit,rec=bytes,err=100) (par2p2(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par2p2(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         if (ntab.gt.2) then
-          read(runit,rec=bytes,err=100) (par2p3(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par2p3(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         if (ntab.gt.3) then
-          read(runit,rec=bytes,err=100) (par2p4(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par2p4(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         if (ntab.gt.4) then
-          read(runit,rec=bytes,err=100) (par2p5(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par2p5(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         if (ntab.gt.5) then
-          read(runit,rec=bytes,err=100) (par2p6(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par2p6(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         write(6,'(''Resolution tables read for e+'')')
       else if (pid.eq.3) then     ! electron
-        read(runit,rec=bytes,err=100) (par3p1(i),i=1,bins)
+        read(runit,pos=bytes,err=100) (par3p1(i),i=1,bins)
         bytes = bytes + bins*4
         if (ntab.gt.1) then
-          read(runit,rec=bytes,err=100) (par3p2(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par3p2(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         if (ntab.gt.2) then
-          read(runit,rec=bytes,err=100) (par3p3(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par3p3(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         if (ntab.gt.3) then
-          read(runit,rec=bytes,err=100) (par3p4(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par3p4(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         if (ntab.gt.4) then
-          read(runit,rec=bytes,err=100) (par3p5(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par3p5(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         if (ntab.gt.5) then
-          read(runit,rec=bytes,err=100) (par3p6(i),i=1,bins)
+          read(runit,pos=bytes,err=100) (par3p6(i),i=1,bins)
           bytes = bytes + bins*4
         end if
         write(6,'(''Resolution tables read for e-'')')
@@ -611,7 +609,7 @@ c
 c
       integer*4 runit
       parameter (runit=78)  ! change if input unit is already busy
-      integer*4 i, j, k, n
+      integer*4 i
       integer*4 bytes       ! byte counter
       integer*4 bins
       integer*4 lc
@@ -632,23 +630,20 @@ c
          if (fname2(i:i+3).eq.'.acc') goto 1
       end do
  1    lc = i+3
-      open(unit=runit, file=fname2, form='unformatted', access='direct',
-     +     status='old',recl=1, err=99)  ! g77 on linux
-c     open(unit=runit, file=fname2, form='binary', access='direct',
-c    +     status='old',recl=1, err=99)  ! Compaq f90 on MS Windows
+      open(unit=runit,file=fname2,access='stream',status='old',err=99)
       bytes=1
-      read(runit,rec=bytes,err=100) comment2
+      read(runit,pos=bytes,err=100) comment2
       write(6,'(a80)') comment2
       bytes = bytes + 80
-      read(runit,rec=bytes,err=100) xdim2, ydim2, zdim2
+      read(runit,pos=bytes,err=100) xdim2, ydim2, zdim2
 c
       bins = xdim2*ydim2*zdim2
       if (bins.gt.size) goto 101  ! check if enough memory available
 c
       bytes = bytes + 3*4
-      read(runit,rec=bytes,err=100) mmin,mmax,ptmin,ptmax,rapmin,rapmax
+      read(runit,pos=bytes,err=100) mmin,mmax,ptmin,ptmax,rapmin,rapmax
       bytes = bytes + 6*4
-      read(runit,rec=bytes,err=100) (matrix51(i),i=1,bins)
+      read(runit,pos=bytes,err=100) (matrix51(i),i=1,bins)
       write(6,'(''Matrix read for e+e- pairs'')')
       bytes = bytes + bins*4
       close(runit)
@@ -870,7 +865,7 @@ c
       include 'readHAFT2.inc'
 c
       integer*4 retcode, readHAFTmatrix
-      real*4 mass, mass2, pt, pt2, ptot, ptot2, Etot, theta, phi, sinth
+      real*4 mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
       real*4 sigp, sampleGauss, betainv, sigms, sigms2, sigthms, sigphms
       real*4 pi, twopi, r2d
       parameter (pi=3.141592654, twopi=2.*pi, r2d=180./pi)
@@ -921,13 +916,13 @@ c        write(6,*) mom(1), mom(2), mom(3), mass, ptot, r2d*theta
 c           write(6,*) i, respar(i)
          end do
 
-         ptot = ptot*(1.+sampleMP(respar,2.))  ! randomize momentum
+         ptot = ptot*(1.+sampleMP(respar,2._4))  ! randomize momentum
 
       else  ! use default gaussian smearing
 
          if (mode.lt.1 .or. mode.gt.3) return  ! unknown mode
          sigp = 0.01*ptot*(sigpA(mode)+sigpB(mode)*ptot)  ! momentum resolution
-         ptot = amax1(0.,sampleGauss(ptot,sigp))  ! smear total momentum
+         ptot = max(0.,sampleGauss(ptot,sigp))  ! smear total momentum
 
          if (pid.eq.2 .or. pid.eq.3) then
             ploss = 0.0018
@@ -961,20 +956,15 @@ c
 c
 c
 c
-      subroutine smearHadesMomentum(px,py,pz,etot,mode,pid)
-      real*4 px, py, pz, etot
-      integer* 4 mode, pid
+      subroutine smearHadesMomentum(p,mode,pid)
+      real*8 p(0:3)
+      integer*4 mode, pid
       real*4 mom4(4)
-      mom4(1) = px
-      mom4(2) = py
-      mom4(3) = pz
-      mom4(4) = etot
+      mom4(1:3) = p(1:3)
+      mom4(4) = p(0)
       call smearHades4Momentum(mom4,mode,pid)
-      px = mom4(1)
-      py = mom4(2)
-      pz = mom4(3)
-      etot = mom4(4)
-      return
+      p(1:3) = mom4(1:3)
+      p(0) = mom4(4)
       end
 c
 c
@@ -1045,7 +1035,6 @@ c
       data par5 /18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7/
 c
       real*4 respar(10), interpol, sampleMP
-      integer*4 i
 c
       if (readflag.eq.0) then
         retcode = readHAFTmatrix()
@@ -1058,7 +1047,7 @@ c
 
       if (mode.eq.4) then  ! use skewd mass function
         sigpt = 0.01*pt*(sigpA(3)+sigpB(3)*pt)/sqrt(2.)       ! pt resolution
-        pt = amax1(0.,sampleGauss(pt,sigpt))                  ! smear pt
+        pt = max(0.,sampleGauss(pt,sigpt))                  ! smear pt
 
         respar(1) = interpol(m,mtab,par1,10)
         respar(2) = interpol(m,mtab,par2,10)
@@ -1068,13 +1057,13 @@ c
 c        do i=1,5    ! interpolate parameters
 c          write(6,*) i, respar(i)
 c        end do
-        m = m*(1.+sampleMP(respar,sqrt(2.)))                  ! randomize mass
+        m = m*(1.+sampleMP(respar,sqrt(2._4)))                  ! randomize mass
       else ! use gaussian smearing
         sigpt = 0.01*pt*(sigpA(mode)+sigpB(mode)*pt)/sqrt(2.) ! pt resolution
-        pt = amax1(0.,sampleGauss(pt,sigpt))                  ! smear pt
+        pt = max(0.,sampleGauss(pt,sigpt))                  ! smear pt
 
         sigm = 0.01*m*(sigpA(mode)+sigpB(mode)*m)/sqrt(2.)
-        m = amax1(0.,sampleGauss(m,sigm))                     ! smear mass
+        m = max(0.,sampleGauss(m,sigm))                     ! smear mass
       end if
 
       sigrap = 0.1    !  just a guess!
@@ -1101,12 +1090,12 @@ c
       real*4 mean, sigma
       real*4 pi, twopi
       parameter (pi=3.141592654, twopi=2.*pi)
-      real*4 theta, ran
+      real*4 theta
 c
       sampleGauss = mean
       if (sigma.le.0.) return
       theta = twopi*ran(iseed)
-      sampleGauss = mean + sigma*cos(theta)*sqrt(-2.*alog(ran(iseed)))
+      sampleGauss = mean + sigma*cos(theta)*sqrt(-2.*log(ran(iseed)))
       return
       end
 c
@@ -1125,7 +1114,7 @@ c
       real*4 amp
 
       e2 = exp(-0.5*ns*ns)
-      lg10 = alog(10.)
+      lg10 = log(10.)
 
       pos = respar(1)     ! Mean
       sig = respar(2)     ! Sigma
@@ -1156,7 +1145,7 @@ c
       momSpread = exp( -0.5*((x-pos)/sig)*((x-pos)/sig) ) ! Gauss
      +       + amp*exp(  left*(x-(pos-ns*sig)) )*argn     ! left tail (connects to Gauss at pos-ns*sig
      +       + amp*exp( right*(x-(pos-ns*sig)) )*argp     ! right tail (Gauss sits on top of it)
-     +       + 0.1*amp*exp( farleft*(x-(-lg10/left+pos-ns*sig)) )*argn2  // far left tail
+     +       + 0.1*amp*exp( farleft*(x-(-lg10/left+pos-ns*sig)) )*argn2  ! far left tail
                                                           ! (joins left tail where decayed to 1/10)
       return
       end
@@ -1179,12 +1168,12 @@ c
       real*4 F0, F1, F2, F3, F
       real*4 dx, ftest
       real*4 r1, r2, r3
-      integer*4 cnt, cnt1, cnt2, cnt3, cnt4
-      real ran, momSpread
-      real e2, lg10
+      integer*4 cnt, cnt1, cnt2, cnt3
+      real*4 momSpread
+      real*4 e2, lg10
 
       e2 = exp(-0.5*ns*ns)
-      lg10 = alog(10.)
+      lg10 = log(10.)
 
       pos = respar(1)      ! centroid
       sig = respar(2)      ! width
@@ -1223,7 +1212,7 @@ c    select region and sample test function
 
  10         continue
                cnt1 = cnt1 + 1
-               r2 = alog(ran(iseed))
+               r2 = log(ran(iseed))
                dx = r2/farleft - ns*sig + pos - lg10/left
             if (cnt1.eq.1000) write(6,*) 'cnt1=1000 ', pos, sig, farleft
             if (dx.lt.-1. .and. cnt1.lt.1000) goto 10  ! limit range to >=-1
@@ -1233,7 +1222,7 @@ c    select region and sample test function
 
  20         continue
                cnt2 = cnt2 + 1
-               r2 = alog(ran(iseed))
+               r2 = log(ran(iseed))
                dx = r2/left - ns*sig + pos
             if (cnt2.eq.1000) write(6,*) 'cnt2=1000', pos, sig, left
             if (dx.lt.-lg10/left-ns*sig+pos .and. cnt2.lt.1000) goto 20
@@ -1249,7 +1238,7 @@ c    select region and sample test function
 
  30         continue
                cnt3 = cnt3 + 1
-               r2 = alog(ran(iseed))
+               r2 = log(ran(iseed))
                dx = r2/right + ns*sig + pos
             if (cnt3.eq.1000) write(6,*) 'cnt3=1000', pos, sig, right
             if (dx.gt.1. .and. cnt3.lt.1000) goto 30 ! limit range to <=1
@@ -1260,7 +1249,7 @@ c    select region and sample test function
 c   do rejection test
          sampleMP = dx
 
-         r3 = ran(iseed)      
+         r3 = ran(iseed)
          if ( r3.lt.momSpread(dx,respar,ns)/ftest ) return
 
       end do

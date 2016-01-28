@@ -10,7 +10,7 @@ c
       parameter (sizep=1000)  ! <<== change if < xdimp*ydimp
       parameter (nids=14)     ! <<== change if < max id
 c
-      character*80 fname, fname2
+      character*200 fname, fname2
       character*80 comment, comment2
       integer*4 xdim(nids), ydim(nids), zdim(nids)
       real*4 dp(nids), dth(nids), dph(nids)
