@@ -99,8 +99,9 @@ contains
     !       = 4 : tri-cubic Catmull-Rom spline
     !       =-4 : tri-cubic optimal cardinal spline
     !
-      integer*4, intent(in) :: pid, mode
+      integer*4, intent(in) :: pid
       real*4, intent(in) :: p0, theta0, phi0
+      integer*4, intent(in), optional :: mode
 
       real*4 p, theta, phi
       real*4 u, v, w
@@ -114,8 +115,11 @@ contains
       real*4 getMatrixVal
       integer*4 mod_
 
-      mod_ = -2   ! use B-spline interpolation
-!     mod = mode
+      if (present(mode)) then
+        mod_ = mode
+      else
+        mod_ = -2   ! use B-spline interpolation
+      end if
 
       getHadesAcceptance = 0.
 
@@ -137,23 +141,24 @@ contains
       iy = ydim*((theta-0.5*dth-thlo)/(thup-thlo)) + 1
       iz = zdim*((phi-0.5*dph-phlo)/(phup-phlo)) + 1
 
-      if (mod_==0 .or. mod_==1) then   ! set summation limits
+      select case (mod_)
+      case (0,1)  ! set summation limits
         ilo = ix
         ihi = ix+1
         jlo = iy
         jhi = iy+1
         klo = iz
         khi = iz+1
-      else if (abs(mod_)==2 .or. abs(mod_)==3 .or. abs(mod_)==4) then
+      case (2,3,4,-2,-3,-4)
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
         jhi = iy+2
         klo = iz-1
         khi = iz+2
-      else  ! mode not defined
+      case default  ! mode not defined
         return
-      end if
+      end select
 
       if (ilo<0 .or. jlo<0 .or. klo<0) return
       if (ihi>xdim+1 .or. jhi>ydim+1 .or. khi>zdim+1) return
@@ -204,8 +209,8 @@ contains
     !       = 4 : tri-cubic Catmull-Rom spline
     !       =-4 : tri-cubic optimal cardinal spline
     !
-      integer*4, intent(in) :: mode
       real*4, intent(in) :: mass0, pt0, rap0
+      integer*4, intent(in), optional :: mode
 
       real*4 mass, pt, rap
       real*4 u, v, w
@@ -223,8 +228,11 @@ contains
       retcode = readHAFTPairMatrix()
       if (retcode==-1) return
 
-      mod = 1    ! use trilinear interpolation
-!     mod = mode ! (use mode = 0 or 1, otherwise problems at pt=0!) 
+      if (present(mode)) then
+        mod = mode  ! (use mode = 0 or 1, otherwise problems at pt=0!)
+      else
+        mod = 1    ! use trilinear interpolation
+      end if
 
       call getDimensions(51,xdim,ydim,zdim)
       call getLimits(51,mlo,mup,dm,ptlo,ptup,dpt,raplo,rapup,drap) 
@@ -240,23 +248,24 @@ contains
       iy = ydim*((pt-0.5*dpt-ptlo)/(ptup-ptlo)) + 1
       iz = zdim*((rap-0.5*drap-raplo)/(rapup-raplo)) + 1
 
-      if (mod==0 .or. mod==1) then   ! set summation limits
+      select case (mod)
+      case (0,1)  ! set summation limits
         ilo = ix
         ihi = ix+1
         jlo = iy
         jhi = iy+1
         klo = iz
         khi = iz+1
-      else if (abs(mod)==2 .or. abs(mod)==3 .or. abs(mod)==4) then
+      case (2,3,4,-2,-3,-4)
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
         jhi = iy+2
         klo = iz-1
         khi = iz+2
-      else  ! mode not defined
+      case default  ! mode not defined
         return
-      end if
+      end select
 
       if (ilo<0 .or. jlo<0 .or. klo<0) return
       if (ihi>xdim+1 .or. jhi>ydim+1 .or. khi>zdim+1) return
