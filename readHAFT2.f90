@@ -309,24 +309,23 @@ contains
 
       real*4 ua
 
-      if (mode.eq.0) then       ! nearest neighbour
+      select case (mode)
+      case (0)  ! nearest neighbour
         if (u.gt.-0.5 .and. u.le.0.5) then
           kernel = 1.
         else 
           kernel = 0.
         end if
-        return
 
-      else if (mode.eq.1) then  ! linear
+      case (1)  ! linear
         ua = abs(u)
         if (ua.lt.1.) then
           kernel = 1.-ua
         else 
           kernel = 0.
         end if
-        return
 
-      else if (mode.eq.2) then  ! quadratic
+      case (2)  ! quadratic
         ua = abs(u)
         if (ua.le.0.5) then
           kernel = 1.0-2.*ua*ua
@@ -335,9 +334,8 @@ contains
         else 
           kernel = 0.
         end if
-        return
 
-      else if (mode.eq.-2) then ! quadratic B-spline
+      case (-2)  ! quadratic B-spline
         ua = abs(u)
         if (ua.le.0.5) then
           kernel = 0.75-ua*ua
@@ -346,9 +344,8 @@ contains
         else 
           kernel = 0.
         end if
-        return
 
-      else if (mode.eq.3) then  ! cubic
+      case (3)  ! cubic
         ua = abs(u)
         if (ua.le.1.) then
           kernel = 1.+(ua-2.)*ua*ua
@@ -357,9 +354,8 @@ contains
         else 
           kernel = 0.
         end if
-        return
 
-      else if (mode.eq.-3) then ! cubic B-spline
+      case (-3)  ! cubic B-spline
         ua = abs(u)
         if (ua.le.1.) then
           kernel = 2./3.+(0.5*ua-1.)*ua*ua
@@ -368,9 +364,8 @@ contains
         else 
           kernel = 0.
         end if
-        return
 
-      else if (mode.eq.4) then  ! cubic Catmull-Rom
+      case (4)  ! cubic Catmull-Rom
         ua = abs(u)
         if (ua.le.1.) then
           kernel = 1.+(1.5*ua-2.5)*ua*ua
@@ -379,10 +374,9 @@ contains
         else 
           kernel = 0.
         end if
-        return
 
-      else if (mode.eq.-4) then ! optimal cubic cardinal spline (=compromise
-                                ! between blurring and ringing)
+      case (-4)  ! optimal cubic cardinal spline
+                 ! (=compromise between blurring and ringing)
         ua = abs(u)
         if (ua.le.1.) then
           kernel = 8./9.+(7./6.*ua-2.)*ua*ua
@@ -391,12 +385,11 @@ contains
         else 
           kernel = 0.
         end if
-        return
 
-      else                      ! undefined mode
+      case default  ! undefined mode
         kernel = 0.
-        return
-      end if
+
+      end select
 
   end function kernel
 
@@ -759,34 +752,26 @@ contains
       k1 = min(max(1,k),zdi)  ! beyond table boundaries.
 
       ilin = i1+xdi*(j1-1)+xdi*ydi*(k1-1)  ! linearized index
-      if (pid.eq.2) then          ! positron
+      select case (pid)
+      case (2)     ! positron
         getMatrixVal = matrix2(ilin)
-        return
-      else if (pid.eq.3) then     ! electron
+      case (3)     ! electron
         getMatrixVal = matrix3(ilin)
-        return
-      else if (pid.eq.8) then     ! pi+
+      case (8)     ! pi+
         getMatrixVal = matrix8(ilin)
-        return
-      else if (pid.eq.9) then     ! pi-
+      case (9)     ! pi-
         getMatrixVal = matrix9(ilin)
-        return
-      else if (pid.eq.10) then    ! K+
+      case (10)    ! K+
         getMatrixVal = matrix10(ilin)
-        return
-      else if (pid.eq.12) then    ! K-
+      case (12)    ! K-
         getMatrixVal = matrix12(ilin)
-        return
-      else if (pid.eq.14) then    ! proton
+      case (14)    ! proton
         getMatrixVal = matrix14(ilin)
-        return
-      else if (pid.eq.51) then    ! dilepton
+      case (51)    ! dilepton
         getMatrixVal = matrix51(ilin)
-        return
-      else
+      case default
         getMatrixVal = 0.
-        return
-      end if
+      end select
   end function getMatrixVal
 
 
@@ -808,7 +793,6 @@ contains
         zlo = rapmin
         zhi = rapmax
         dz = drap
-        return
       else
         xlo  = pmin(pid)
         xhi  = pmax(pid)
@@ -819,7 +803,6 @@ contains
         zlo = phmin(pid)
         zhi = phmax(pid)
         dz = dph(pid)
-        return
       end if
   end subroutine getLimits
 
