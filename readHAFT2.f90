@@ -96,8 +96,9 @@ contains
     !       =-3 : tri-cubic B-spline interpolation
     !       = 4 : tri-cubic Catmull-Rom spline
     !       =-4 : tri-cubic optimal cardinal spline
-      integer*4 pid, mode
-      real*4 p0, theta0, phi0
+    !
+      integer*4, intent(in) :: pid, mode
+      real*4, intent(in) :: p0, theta0, phi0
 
       real*4 p, theta, phi
       real*4 u, v, w
@@ -202,8 +203,8 @@ contains
     !       = 4 : tri-cubic Catmull-Rom spline
     !       =-4 : tri-cubic optimal cardinal spline
     !
-      integer*4 mode
-      real*4 mass0, pt0, rap0
+      integer*4, intent(in) :: mode
+      real*4, intent(in) :: mass0, pt0, rap0
 
       real*4 mass, pt, rap
       real*4 u, v, w
@@ -301,8 +302,9 @@ contains
     !  mode >=0: interpolating (i.e. exact at grid points)
     !  mode < 0: approximating (i.e. not exact, but smoother)
     !
-      real*4 u
-      integer*4 mode
+      real*4, intent(in) :: u
+      integer*4, intent(in) :: mode
+
       real*4 ua
 
       if (mode.eq.0) then       ! nearest neighbour
@@ -403,7 +405,6 @@ contains
     !  Opens file in unformatted direct access mode
     !  and reads HADES acceptance matrices (as linearized arrays)
     !
-
       integer*4 runit
       parameter (runit=77)  ! change if input unit is already busy
       integer*4 pid
@@ -632,7 +633,6 @@ contains
     !  Opens file in unformatted direct access mode
     !  and reads HADES pair acceptance matrix (as linearized array)
     !
-
       integer*4 runit
       parameter (runit=78)  ! change if input unit is already busy
       integer*4 i
@@ -708,8 +708,7 @@ contains
     !
     !  Sets name of input file containing the filter
     !
-
-      character*(*) name
+      character*(*), intent(in) :: name
 
       integer*4 dummy, readHAFTmatrix
 
@@ -727,8 +726,7 @@ contains
     !
     !  Sets name of input file containing the filter
     !
-
-      character*(*) name
+      character*(*), intent(in) :: name
 
       integer*4 dummy, readHAFTPairMatrix
 
@@ -747,8 +745,7 @@ contains
     !  Returns acceptance value at cell (i,j,k) of linearized matrix
     !  for particle ID
     !
-
-      integer*4 i, j, k, pid
+      integer*4, intent(in) :: i, j, k, pid
 
       integer*4 xdi, ydi, zdi
       integer*4 i1, j1, k1, ilin
@@ -796,9 +793,8 @@ contains
     !
     !  Return the lower and upper limits, and step sizes of the table
     !
-
-      integer*4 pid
-      real*4 xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
+      integer*4, intent(in) :: pid
+      real*4, intent(out) :: xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
 
       if (pid.eq.51) then  ! pair
         xlo  = mmin
@@ -831,8 +827,8 @@ contains
     !
     !  Return the dimensions of a table of particle pid
     !
-
-      integer*4 pid, nx, ny, nz
+      integer*4, intent(in)  :: pid
+      integer*4, intent(out) :: nx, ny, nz
 
       if (pid.eq.51) then  ! pair
         nx  = xdim2
@@ -871,9 +867,8 @@ contains
     !        = 3 : high-resolution    (MDC 1+2+3+4)
     !
     !
-
-      real*4 mom(4)
-      integer*4 mode,pid
+      real*4, intent(inout) :: mom(4)
+      integer*4, intent(in) :: mode,pid
 
       integer*4 retcode, readHAFTmatrix
       real*4 mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
@@ -965,12 +960,16 @@ contains
 
 
   subroutine smearHadesMomentum(p,mode,pid)
-      real*8 p(0:3)
-      integer*4 mode, pid
+      real*8, intent(inout) :: p(0:3)
+      integer*4, intent(in) :: mode, pid
+
       real*4 mom4(4)
+
       mom4(1:3) = p(1:3)
       mom4(4) = p(0)
+
       call smearHades4Momentum(mom4,mode,pid)
+
       p(1:3) = mom4(1:3)
       p(0) = mom4(4)
   end subroutine smearHadesMomentum
@@ -982,9 +981,9 @@ contains
     !  Apply Hades momentum resolution to a 3-momentum (calculate multiple
     !  scattering assuming the particle is an electron) 
     !
+      real*4, intent(inout) :: mom3(3)
+      integer*4, intent(in) :: mode,pid
 
-      real*4 mom3(3)
-      integer*4 mode,pid
       real*4 mom4(4)
       real*4 mass
 
@@ -1019,9 +1018,8 @@ contains
     !  Apply Hades momentum resolution to a pair (calculate multiple
     !  scattering assuming the particle is an electron) 
     !
-
-      real*4 pair(3)
-      integer*4 mode
+      real*4, intent(inout) :: pair(3)
+      integer*4, intent(in) :: mode
 
       real*4 m, pt, rap, sigpt, sigm, sigrap
       real*4 sampleGauss
@@ -1087,8 +1085,8 @@ contains
     !
     !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
     !
+      real*4, intent(in) :: mean, sigma
 
-      real*4 mean, sigma
       real*4 pi, twopi
       parameter (pi=3.141592654, twopi=2.*pi)
       real*4 theta
@@ -1105,9 +1103,8 @@ contains
     !
     !     HADES momentum spread (pRec-pSim)/pSim
     !
-      real*4 x
-      real*4 respar(10)
-      real*4 ns
+      real*4, intent(in) :: x, respar(10), ns
+
       real*4 pos, sig, left, right, farleft
       real*4 argn, argp, argn2
       real*4 e2, lg10
@@ -1157,8 +1154,8 @@ contains
     !
     !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
     !
+      real*4, intent(in) :: respar(10), ns
 
-      real*4 respar(10), ns
       real*4 pos, sig, left, right, farleft
       real*4 A0, A1, A2, A3
       real*4 F0, F1, F2, F3, F
@@ -1260,9 +1257,8 @@ contains
     !
     !     Set momentum resolution parameters
     !
-
-      real*4 a, b
-      integer*4 mode
+      real*4, intent(in) :: a, b
+      integer*4, intent(in) :: mode
 
       if (mode.ge.1 .and. mode.le.3) then
          sigpA(mode) = a
@@ -1280,8 +1276,7 @@ contains
     !
     !     Set angular resolution parameters
     !
-
-      real*4 stheta, sphi
+      real*4, intent(in) :: stheta, sphi
 
       if (stheta.gt.0. .and. sphi.gt.0.) then
          sigth = stheta
@@ -1298,9 +1293,9 @@ contains
     !     Interpolate resolution parameter table as function
     !     of momentum and theta (pin in GeV/c and theta in degree)
     !
+      real*4, intent(in) :: pin, thin
+      integer*4, intent(in) :: pid, itab
 
-      real*4 pin, thin
-      integer*4 pid, itab
       real*4 p, th
       integer*4 xdi, ydi
       real*4 plo, pup, dp0, thlo, thup, dth0
@@ -1370,8 +1365,7 @@ contains
     !  Returns acceptance value at cell (i,j) of linearized
     !  parameter table for particle ID
     !
-
-      integer*4 i, j, pid, itab
+      integer*4, intent(in) :: i, j, pid, itab
 
       integer*4 xdi, ydi
       integer*4 i1, j1, ilin
@@ -1410,9 +1404,10 @@ contains
     !
     !     linear interpolation in table (xtab,ytab) 
     !
+      real*4, intent(in) :: x, xtab(*), ytab(*)
+      integer*4, intent(in) :: n
 
-      real*4 x, xtab(*), ytab(*)
-      integer*4 n, i
+      integer*4 i
       real*4 a, b
 
       if (x.le.xtab(1)) then ! below table range
