@@ -15,8 +15,6 @@
 !  Modified:  15/02/11 R. Holzmann  added support for non-gaussian momentum smearing 
 !  Mofified:  20/04/11 J. Weil      use stream I/O, generic intrinsics, etc
 !
-!  Files needed : readHAFT2.inc
-!
 !  Usage : 1) set acceptance file name with
 !                 call setFileName(fname)
 !          2) sample single acceptance values with calls to
@@ -25,7 +23,7 @@
 !                 acc = getHadesPairAcceptance(mass,pt,rapidity,mode)
 !*******************************************************************************
 
-module HAFT_module
+module HAFT
 
   implicit none
   private
@@ -34,6 +32,33 @@ module HAFT_module
   public :: setFileName, setPairFileName
   public :: smearhadesmomentum, smearHades3Momentum, smearHadesPair
   public :: setResolutionParameters, setAngularResolutionParameters
+
+  !  HAFT declaration of acceptance matrix arrays and resolution tables
+  !  The dimensions MUST match all array sizes in the file!
+  integer*4, parameter :: size  = 250000, &  ! <<== change if < xdim*ydim*zdim
+                          sizep = 1000,   &  ! <<== change if < xdimp*ydimp
+                          nids  = 14         ! <<== change if < max id
+
+  character(len=200), save :: fname  = 'HadesAcceptanceFilter.acc', &
+                              fname2 = 'HadesPairAcceptanceFilter.acc'
+
+  integer*4, save :: iseed = 123
+  integer*4, save :: readflag = 0, readflag2 = 0
+
+  character(len=80) :: comment, comment2
+  integer*4, dimension(nids) :: xdim, ydim, zdim, resflag, xdimp, ydimp
+  real*4, dimension(nids) :: dp, dth, dph, pmin, pmax, thmin, thmax, phmin, phmax
+  real*4, dimension(nids) :: dpp, dthp, pminp, pmaxp, thminp, thmaxp
+
+  ! matrices are declared for e+, e-, pi+, pi-, K+, K- and p
+  real*4, dimension(size) :: matrix2, matrix3, matrix8, matrix9, matrix10, &
+                             matrix12, matrix14, matrix51
+  real*4 sigpA(3), sigpB(3), sigth, sigph, XX0
+  integer*4 xdim2, ydim2, zdim2, ntab
+  real*4 dm, dpt, drap, mmin, mmax, ptmin, ptmax, rapmin, rapmax
+
+  real*4, dimension(sizep) :: par2p1, par2p2, par2p3, par2p4, par2p5, par2p6
+  real*4, dimension(sizep) :: par3p1, par3p2, par3p3, par3p4, par3p5, par3p6
 
 contains
 
@@ -375,8 +400,6 @@ contains
     !  and reads HADES acceptance matrices (as linearized arrays)
     !
 
-      include 'readHAFT2.inc'
-
       integer*4 runit
       parameter (runit=77)  ! change if input unit is already busy
       integer*4 pid
@@ -606,8 +629,6 @@ contains
     !  and reads HADES pair acceptance matrix (as linearized array)
     !
 
-      include 'readHAFT2.inc'
-
       integer*4 runit
       parameter (runit=78)  ! change if input unit is already busy
       integer*4 i
@@ -686,7 +707,6 @@ contains
 
       character*(*) name
 
-      include 'readHAFT2.inc'
       integer*4 dummy, readHAFTmatrix
 
       fname = name
@@ -706,7 +726,6 @@ contains
 
       character*(*) name
 
-      include 'readHAFT2.inc'
       integer*4 dummy, readHAFTPairMatrix
 
       fname2 = name
@@ -726,8 +745,6 @@ contains
     !
 
       integer*4 i, j, k, pid
-
-      include 'readHAFT2.inc'
 
       integer*4 xdi, ydi, zdi
       integer*4 i1, j1, k1, ilin
@@ -779,8 +796,6 @@ contains
       integer*4 pid
       real*4 xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
 
-      include 'readHAFT2.inc'
-
       if (pid.eq.51) then  ! pair
         xlo  = mmin
         xhi  = mmax
@@ -814,8 +829,6 @@ contains
     !
 
       integer*4 pid, nx, ny, nz
-
-      include 'readHAFT2.inc'
 
       if (pid.eq.51) then  ! pair
         nx  = xdim2
@@ -857,8 +870,6 @@ contains
 
       real*4 mom(4)
       integer*4 mode,pid
-
-      include 'readHAFT2.inc'
 
       integer*4 retcode, readHAFTmatrix
       real*4 mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
@@ -1008,8 +1019,6 @@ contains
       real*4 pair(3)
       integer*4 mode
 
-      include 'readHAFT2.inc'
-
       real*4 m, pt, rap, sigpt, sigm, sigrap
       real*4 sampleGauss
       integer*4 retcode, readHAFTmatrix
@@ -1074,8 +1083,6 @@ contains
     !
     !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
     !
-
-      include 'readHAFT2.inc'
 
       real*4 mean, sigma
       real*4 pi, twopi
@@ -1146,8 +1153,6 @@ contains
     !
     !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
     !
-
-      include 'readHAFT2.inc'
 
       real*4 respar(10), ns
       real*4 pos, sig, left, right, farleft
@@ -1252,8 +1257,6 @@ contains
     !     Set momentum resolution parameters
     !
 
-      include 'readHAFT2.inc'
-
       real*4 a, b
       integer*4 mode
 
@@ -1274,8 +1277,6 @@ contains
     !     Set angular resolution parameters
     !
 
-      include 'readHAFT2.inc'
-
       real*4 stheta, sphi
 
       if (stheta.gt.0. .and. sphi.gt.0.) then
@@ -1293,8 +1294,6 @@ contains
     !     Interpolate resolution parameter table as function
     !     of momentum and theta (pin in GeV/c and theta in degree)
     !
-
-      include 'readHAFT2.inc'
 
       real*4 pin, thin
       integer*4 pid, itab
@@ -1370,8 +1369,6 @@ contains
 
       integer*4 i, j, pid, itab
 
-      include 'readHAFT2.inc'
-
       integer*4 xdi, ydi
       integer*4 i1, j1, ilin
 
@@ -1435,17 +1432,3 @@ contains
   end
 
 end module
-
-
-      block data blockHAFT
-    !
-    !  Needed to provide a default file name and random number seed
-    !
-      implicit none
-      include 'readHAFT2.inc'
-      data fname /'HadesAcceptanceFilter.acc'/
-      data fname2 /'HadesPairAcceptanceFilter.acc'/
-      data iseed /123/
-      data readflag /0/
-      data readflag2 /0/
-      end
