@@ -1,0 +1,5 @@
+*.o
+*.diff
+*.orig
+*.rej
+.directory
