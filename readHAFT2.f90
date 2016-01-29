@@ -37,38 +37,38 @@ module HAFT
 
   !  HAFT declaration of acceptance matrix arrays and resolution tables
   !  The dimensions MUST match all array sizes in the file!
-  integer*4, parameter :: size  = 250000, &  ! <<== change if < xdim*ydim*zdim
+  integer(4), parameter :: size  = 250000, &  ! <<== change if < xdim*ydim*zdim
                           sizep = 1000,   &  ! <<== change if < xdimp*ydimp
                           nids  = 14         ! <<== change if < max id
 
-  real*4, parameter :: pi = 3.141592654, twopi = 2.*pi
+  real(4), parameter :: pi = 3.141592654, twopi = 2.*pi
 
   character(len=200), save :: fname  = 'HadesAcceptanceFilter.acc', &
                               fname2 = 'HadesPairAcceptanceFilter.acc'
 
-  integer*4, save :: iseed = 123
-  integer*4, save :: readflag = 0, readflag2 = 0
+  integer(4), save :: iseed = 123
+  integer(4), save :: readflag = 0, readflag2 = 0
 
   character(len=80) :: comment, comment2
-  integer*4, dimension(nids) :: xdim, ydim, zdim, resflag, xdimp, ydimp
-  real*4, dimension(nids) :: dp, dth, dph, pmin, pmax, thmin, thmax, phmin, phmax
-  real*4, dimension(nids) :: dpp, dthp, pminp, pmaxp, thminp, thmaxp
+  integer(4), dimension(nids) :: xdim, ydim, zdim, resflag, xdimp, ydimp
+  real(4), dimension(nids) :: dp, dth, dph, pmin, pmax, thmin, thmax, phmin, phmax
+  real(4), dimension(nids) :: dpp, dthp, pminp, pmaxp, thminp, thmaxp
 
   ! matrices are declared for e+, e-, pi+, pi-, K+, K- and p
-  real*4, dimension(size) :: matrix2, matrix3, matrix8, matrix9, matrix10, &
+  real(4), dimension(size) :: matrix2, matrix3, matrix8, matrix9, matrix10, &
                              matrix12, matrix14, matrix51
-  real*4 sigpA(3), sigpB(3), sigth, sigph, XX0
-  integer*4 xdim2, ydim2, zdim2, ntab
-  real*4 dm, dpt, drap, mmin, mmax, ptmin, ptmax, rapmin, rapmax
+  real(4) sigpA(3), sigpB(3), sigth, sigph, XX0
+  integer(4) xdim2, ydim2, zdim2, ntab
+  real(4) dm, dpt, drap, mmin, mmax, ptmin, ptmax, rapmin, rapmax
 
-  real*4, dimension(sizep) :: par2p1, par2p2, par2p3, par2p4, par2p5, par2p6
-  real*4, dimension(sizep) :: par3p1, par3p2, par3p3, par3p4, par3p5, par3p6
+  real(4), dimension(sizep) :: par2p1, par2p2, par2p3, par2p4, par2p5, par2p6
+  real(4), dimension(sizep) :: par3p1, par3p2, par3p3, par3p4, par3p5, par3p6
 
 
 contains
 
 
-  real*4 function getHadesAcceptance(pid,p0,theta0,phi0,mode)
+  real(4) function getHadesAcceptance(pid,p0,theta0,phi0,mode)
     !
     !  Returns HADES acceptance for particle id of given momentum (in GeV/c),
     !  polar angle theta (in deg.) and azimuthal angle phi (in deg.)
@@ -99,21 +99,21 @@ contains
     !       = 4 : tri-cubic Catmull-Rom spline
     !       =-4 : tri-cubic optimal cardinal spline
     !
-      integer*4, intent(in) :: pid
-      real*4, intent(in) :: p0, theta0, phi0
-      integer*4, intent(in), optional :: mode
+      integer(4), intent(in) :: pid
+      real(4), intent(in) :: p0, theta0, phi0
+      integer(4), intent(in), optional :: mode
 
-      real*4 p, theta, phi
-      real*4 u, v, w
-      integer*4 ix, iy, iz, i, j, k
-      integer*4 ilo, ihi, jlo, jhi, klo, khi
-      real*4 sum, Kx, Ky, Kz, kernel
-      integer*4 xdim, ydim, zdim
-      real*4 plo, pup, dp, thlo, thup, dth, phlo, phup, dph
+      real(4) p, theta, phi
+      real(4) u, v, w
+      integer(4) ix, iy, iz, i, j, k
+      integer(4) ilo, ihi, jlo, jhi, klo, khi
+      real(4) sum, Kx, Ky, Kz, kernel
+      integer(4) xdim, ydim, zdim
+      real(4) plo, pup, dp, thlo, thup, dth, phlo, phup, dph
 
-      integer*4 retcode, readHAFTmatrix
-      real*4 getMatrixVal
-      integer*4 mod_
+      integer(4) retcode, readHAFTmatrix
+      real(4) getMatrixVal
+      integer(4) mod_
 
       if (present(mode)) then
         mod_ = mode
@@ -185,7 +185,7 @@ contains
 
 
 
-  real*4 function getHadesPairAcceptance(mass0,pt0,rap0,mode)
+  real(4) function getHadesPairAcceptance(mass0,pt0,rap0,mode)
     !
     !  Returns HADES pair acceptance for given mass (in GeV/c**2),
     !  transverse momentum (in GeV/c) and rapidity (in lab frame)
@@ -209,20 +209,20 @@ contains
     !       = 4 : tri-cubic Catmull-Rom spline
     !       =-4 : tri-cubic optimal cardinal spline
     !
-      real*4, intent(in) :: mass0, pt0, rap0
-      integer*4, intent(in), optional :: mode
+      real(4), intent(in) :: mass0, pt0, rap0
+      integer(4), intent(in), optional :: mode
 
-      real*4 mass, pt, rap
-      real*4 u, v, w
-      integer*4 ix, iy, iz, i, j, k
-      integer*4 ilo, ihi, jlo, jhi, klo, khi
-      real*4 sum, Kx, Ky, Kz, kernel
-      integer*4 xdim, ydim, zdim
-      real*4 mlo, mup, dm, ptlo, ptup, dpt, raplo, rapup, drap
+      real(4) mass, pt, rap
+      real(4) u, v, w
+      integer(4) ix, iy, iz, i, j, k
+      integer(4) ilo, ihi, jlo, jhi, klo, khi
+      real(4) sum, Kx, Ky, Kz, kernel
+      integer(4) xdim, ydim, zdim
+      real(4) mlo, mup, dm, ptlo, ptup, dpt, raplo, rapup, drap
 
-      integer*4 retcode, readHAFTPairmatrix
-      real*4 getMatrixVal
-      integer*4 mod
+      integer(4) retcode, readHAFTPairmatrix
+      real(4) getMatrixVal
+      integer(4) mod
 
       getHadesPairAcceptance = 0.
       retcode = readHAFTPairMatrix()
@@ -292,7 +292,7 @@ contains
 
 
 
-  real*4 function kernel(u,mode)
+  real(4) function kernel(u,mode)
     !
     !  Compute interpolation kernel
     !
@@ -308,10 +308,10 @@ contains
     !  mode >=0: interpolating (i.e. exact at grid points)
     !  mode < 0: approximating (i.e. not exact, but smoother)
     !
-      real*4, intent(in) :: u
-      integer*4, intent(in) :: mode
+      real(4), intent(in) :: u
+      integer(4), intent(in) :: mode
 
-      real*4 ua
+      real(4) ua
 
       select case (mode)
       case (0)  ! nearest neighbour
@@ -399,18 +399,18 @@ contains
 
 
 
-  integer*4 function readHAFTmatrix()
+  integer(4) function readHAFTmatrix()
     !
     !  Opens file in unformatted direct access mode
     !  and reads HADES acceptance matrices (as linearized arrays)
     !
-      integer*4, parameter :: runit = 77  ! change if input unit is already busy
+      integer(4), parameter :: runit = 77  ! change if input unit is already busy
 
-      integer*4 pid
-      integer*4 i
-      integer*4 bytes       ! byte counter
-      integer*4 bins
-      integer*4 lc          ! string length
+      integer(4) pid
+      integer(4) i
+      integer(4) bytes       ! byte counter
+      integer(4) bins
+      integer(4) lc          ! string length
 
       readHAFTmatrix = 0
 
@@ -627,17 +627,17 @@ contains
 
 
 
-  integer*4 function readHAFTPairMatrix()
+  integer(4) function readHAFTPairMatrix()
     !
     !  Opens file in unformatted direct access mode
     !  and reads HADES pair acceptance matrix (as linearized array)
     !
-      integer*4, parameter :: runit = 78  ! change if input unit is already busy
+      integer(4), parameter :: runit = 78  ! change if input unit is already busy
 
-      integer*4 i
-      integer*4 bytes       ! byte counter
-      integer*4 bins
-      integer*4 lc
+      integer(4) i
+      integer(4) bytes       ! byte counter
+      integer(4) bins
+      integer(4) lc
 
       readHAFTPairMatrix = 0
 
@@ -709,7 +709,7 @@ contains
     !
       character*(*), intent(in) :: name
 
-      integer*4 dummy, readHAFTmatrix
+      integer(4) dummy, readHAFTmatrix
 
       fname = name
       dummy = readHAFTmatrix()
@@ -727,7 +727,7 @@ contains
     !
       character*(*), intent(in) :: name
 
-      integer*4 dummy, readHAFTPairMatrix
+      integer(4) dummy, readHAFTPairMatrix
 
       fname2 = name
       dummy = readHAFTPairMatrix()
@@ -739,15 +739,15 @@ contains
 
 
 
-  real*4 function getMatrixVal(i,j,k,pid)
+  real(4) function getMatrixVal(i,j,k,pid)
     !
     !  Returns acceptance value at cell (i,j,k) of linearized matrix
     !  for particle ID
     !
-      integer*4, intent(in) :: i, j, k, pid
+      integer(4), intent(in) :: i, j, k, pid
 
-      integer*4 xdi, ydi, zdi
-      integer*4 i1, j1, k1, ilin
+      integer(4) xdi, ydi, zdi
+      integer(4) i1, j1, k1, ilin
 
       call getDimensions(pid,xdi,ydi,zdi)
 
@@ -784,8 +784,8 @@ contains
     !
     !  Return the lower and upper limits, and step sizes of the table
     !
-      integer*4, intent(in) :: pid
-      real*4, intent(out) :: xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
+      integer(4), intent(in) :: pid
+      real(4), intent(out) :: xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
 
       if (pid==51) then  ! pair
         xlo  = mmin
@@ -816,8 +816,8 @@ contains
     !
     !  Return the dimensions of a table of particle pid
     !
-      integer*4, intent(in)  :: pid
-      integer*4, intent(out) :: nx, ny, nz
+      integer(4), intent(in)  :: pid
+      integer(4), intent(out) :: nx, ny, nz
 
       if (pid==51) then  ! pair
         nx  = xdim2
@@ -856,16 +856,16 @@ contains
     !        = 3 : high-resolution    (MDC 1+2+3+4)
     !
     !
-      real*4, intent(inout) :: mom(4)
-      integer*4, intent(in) :: mode,pid
+      real(4), intent(inout) :: mom(4)
+      integer(4), intent(in) :: mode,pid
 
-      integer*4 retcode, readHAFTmatrix
-      real*4 mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
-      real*4 sigp, sampleGauss, betainv, sigms, sigms2, sigthms, sigphms
-      real*4, parameter :: r2d = 180./pi
-      real*4 ploss
-      real*4 respar(10), param, sampleMP
-      integer*4 i
+      integer(4) retcode, readHAFTmatrix
+      real(4) mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
+      real(4) sigp, sampleGauss, betainv, sigms, sigms2, sigthms, sigphms
+      real(4), parameter :: r2d = 180./pi
+      real(4) ploss
+      real(4) respar(10), param, sampleMP
+      integer(4) i
 
       if (readflag==0) then
         retcode = readHAFTmatrix()
@@ -949,10 +949,10 @@ contains
 
 
   subroutine smearHadesMomentum(p,mode,pid)
-      real*8, intent(inout) :: p(0:3)
-      integer*4, intent(in) :: mode, pid
+      real(8), intent(inout) :: p(0:3)
+      integer(4), intent(in) :: mode, pid
 
-      real*4 mom4(4)
+      real(4) mom4(4)
 
       mom4(1:3) = p(1:3)
       mom4(4) = p(0)
@@ -970,11 +970,11 @@ contains
     !  Apply Hades momentum resolution to a 3-momentum (calculate multiple
     !  scattering assuming the particle is an electron) 
     !
-      real*4, intent(inout) :: mom3(3)
-      integer*4, intent(in) :: mode,pid
+      real(4), intent(inout) :: mom3(3)
+      integer(4), intent(in) :: mode,pid
 
-      real*4 mom4(4)
-      real*4 mass
+      real(4) mom4(4)
+      real(4) mass
 
       if (mode<1 .or. mode>3) return    ! unknown mode
 
@@ -1007,25 +1007,25 @@ contains
     !  Apply Hades momentum resolution to a pair (calculate multiple
     !  scattering assuming the particle is an electron) 
     !
-      real*4, intent(inout) :: pair(3)
-      integer*4, intent(in) :: mode
+      real(4), intent(inout) :: pair(3)
+      integer(4), intent(in) :: mode
 
-      real*4 m, pt, rap, sigpt, sigm, sigrap
-      real*4 sampleGauss
-      integer*4 retcode, readHAFTmatrix
+      real(4) m, pt, rap, sigpt, sigm, sigrap
+      real(4) sampleGauss
+      integer(4) retcode, readHAFTmatrix
 
-      real*4, parameter :: mtab(10) = (/ 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2 /)  ! mass grid
-      real*4, parameter :: par1(10) = (/ 0.0077, -0.0082, -0.0125, -0.0120, -0.0114, &
+      real(4), parameter :: mtab(10) = (/ 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2 /)  ! mass grid
+      real(4), parameter :: par1(10) = (/ 0.0077, -0.0082, -0.0125, -0.0120, -0.0114, &
                                         -0.0106, -0.0098, -0.0085, -0.0078, -0.0075 /)
-      real*4, parameter :: par2(10) = (/ 0.0820, 0.0460, 0.0260, 0.0210, 0.0190, &
+      real(4), parameter :: par2(10) = (/ 0.0820, 0.0460, 0.0260, 0.0210, 0.0190, &
                                          0.0183, 0.0182, 0.0181, 0.0180, 0.0180 /)
-      real*4, parameter :: par3(10) = (/ 13.5, 16.2, 19.9, 20.2, 19.2, &
+      real(4), parameter :: par3(10) = (/ 13.5, 16.2, 19.9, 20.2, 19.2, &
                                          18.0, 16.9, 14.8, 12.8, 11.0 /)
-      real*4, parameter :: par4(10) = (/-10.0, -15.4, -20.4, -23.1, -22.3, &
+      real(4), parameter :: par4(10) = (/-10.0, -15.4, -20.4, -23.1, -22.3, &
                                         -21.6, -20.6, -19.4, -18.2, -17.9 /)
-      real*4, parameter :: par5(10) = (/ 18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7 /)
+      real(4), parameter :: par5(10) = (/ 18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7 /)
 
-      real*4 respar(10), interpol, sampleMP
+      real(4) respar(10), interpol, sampleMP
 
       if (readflag==0) then
         retcode = readHAFTmatrix()
@@ -1067,15 +1067,15 @@ contains
 
 
 
-  real*4 function sampleGauss(mean,sigma)
+  real(4) function sampleGauss(mean,sigma)
     !
     !  Return random number according to a normal distribution.
     !
     !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
     !
-      real*4, intent(in) :: mean, sigma
+      real(4), intent(in) :: mean, sigma
 
-      real*4 theta
+      real(4) theta
 
       sampleGauss = mean
       if (sigma<=0.) return
@@ -1085,16 +1085,16 @@ contains
 
 
 
-  real*4 function momSpread(x,respar,ns)
+  real(4) function momSpread(x,respar,ns)
     !
     !     HADES momentum spread (pRec-pSim)/pSim
     !
-      real*4, intent(in) :: x, respar(10), ns
+      real(4), intent(in) :: x, respar(10), ns
 
-      real*4 pos, sig, left, right, farleft
-      real*4 argn, argp, argn2
-      real*4 e2, lg10
-      real*4 amp
+      real(4) pos, sig, left, right, farleft
+      real(4) argn, argp, argn2
+      real(4) e2, lg10
+      real(4) amp
 
       e2 = exp(-0.5*ns*ns)
       lg10 = log(10.)
@@ -1134,22 +1134,22 @@ contains
 
 
 
-  real*4 function sampleMP(respar,ns)
+  real(4) function sampleMP(respar,ns)
     !
     !  Return random number according to the normalized HADES momentum distribution.
     !
     !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
     !
-      real*4, intent(in) :: respar(10), ns
+      real(4), intent(in) :: respar(10), ns
 
-      real*4 pos, sig, left, right, farleft
-      real*4 A0, A1, A2, A3
-      real*4 F0, F1, F2, F3, F
-      real*4 dx, ftest
-      real*4 r1, r2, r3
-      integer*4 cnt, cnt1, cnt2, cnt3
-      real*4 momSpread
-      real*4 e2, lg10
+      real(4) pos, sig, left, right, farleft
+      real(4) A0, A1, A2, A3
+      real(4) F0, F1, F2, F3, F
+      real(4) dx, ftest
+      real(4) r1, r2, r3
+      integer(4) cnt, cnt1, cnt2, cnt3
+      real(4) momSpread
+      real(4) e2, lg10
 
       e2 = exp(-0.5*ns*ns)
       lg10 = log(10.)
@@ -1243,8 +1243,8 @@ contains
     !
     !     Set momentum resolution parameters
     !
-      real*4, intent(in) :: a, b
-      integer*4, intent(in) :: mode
+      real(4), intent(in) :: a, b
+      integer(4), intent(in) :: mode
 
       if (mode>=1 .and. mode<=3) then
          sigpA(mode) = a
@@ -1262,7 +1262,7 @@ contains
     !
     !     Set angular resolution parameters
     !
-      real*4, intent(in) :: stheta, sphi
+      real(4), intent(in) :: stheta, sphi
 
       if (stheta>0. .and. sphi>0.) then
          sigth = stheta
@@ -1274,20 +1274,20 @@ contains
 
 
 
-  real*4 function param(pin,thin,pid,itab)
+  real(4) function param(pin,thin,pid,itab)
     !
     !     Interpolate resolution parameter table as function
     !     of momentum and theta (pin in GeV/c and theta in degree)
     !
-      real*4, intent(in) :: pin, thin
-      integer*4, intent(in) :: pid, itab
+      real(4), intent(in) :: pin, thin
+      integer(4), intent(in) :: pid, itab
 
-      real*4 p, th
-      integer*4 xdi, ydi
-      real*4 plo, pup, dp0, thlo, thup, dth0
-      integer*4 i, j, ix, iy, ilo, ihi, jlo, jhi
-      integer*4 mod
-      real*4 sum, u, v, kernel, Kx, Ky, getTableVal
+      real(4) p, th
+      integer(4) xdi, ydi
+      real(4) plo, pup, dp0, thlo, thup, dth0
+      integer(4) i, j, ix, iy, ilo, ihi, jlo, jhi
+      integer(4) mod
+      real(4) sum, u, v, kernel, Kx, Ky, getTableVal
 
       mod = 1
       param = 0.
@@ -1345,15 +1345,15 @@ contains
 
 
 
-  real*4 function getTableVal(i,j,pid,itab)
+  real(4) function getTableVal(i,j,pid,itab)
     !
     !  Returns acceptance value at cell (i,j) of linearized
     !  parameter table for particle ID
     !
-      integer*4, intent(in) :: i, j, pid, itab
+      integer(4), intent(in) :: i, j, pid, itab
 
-      integer*4 xdi, ydi
-      integer*4 i1, j1, ilin
+      integer(4) xdi, ydi
+      integer(4) i1, j1, ilin
 
       getTableVal = 0.
       if (pid<1 .or. pid>nids) return
@@ -1385,15 +1385,15 @@ contains
 
 
 
-  real*4 function interpol(x,xtab,ytab,n)
+  real(4) function interpol(x,xtab,ytab,n)
     !
     !     linear interpolation in table (xtab,ytab) 
     !
-      real*4, intent(in) :: x, xtab(*), ytab(*)
-      integer*4, intent(in) :: n
+      real(4), intent(in) :: x, xtab(*), ytab(*)
+      integer(4), intent(in) :: n
 
-      integer*4 i
-      real*4 a, b
+      integer(4) i
+      real(4) a, b
 
       if (x<=xtab(1)) then ! below table range
         interpol = ytab(1)
