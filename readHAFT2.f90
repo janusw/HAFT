@@ -41,7 +41,7 @@ module HAFT
                           sizep = 1000,   &  ! <<== change if < xdimp*ydimp
                           nids  = 14         ! <<== change if < max id
 
-  real(4), parameter :: pi = 3.141592654, twopi = 2.*pi
+  real(4), parameter :: pi = 3.141592654, twopi = 2.*pi, lg10 = log(10.)
 
   character(len=200), save :: fname  = 'HadesAcceptanceFilter.acc', &
                               fname2 = 'HadesPairAcceptanceFilter.acc'
@@ -1043,10 +1043,9 @@ contains
     !
       real(4), intent(in) :: x, respar(10), ns
 
-      real(4) pos, sig, left, right, farleft, argn, argp, argn2, e2, lg10, amp
+      real(4) pos, sig, left, right, farleft, argn, argp, argn2, e2, amp
 
       e2 = exp(-0.5*ns*ns)
-      lg10 = log(10.)
 
       pos = respar(1)     ! Mean
       sig = respar(2)     ! Sigma
@@ -1091,12 +1090,11 @@ contains
     !
       real(4), intent(in) :: respar(10), ns
 
-      real(4) pos, sig, left, right, farleft, A0, A1, A2, A3, F0, F1, F2, F3, F
-      real(4) dx, ftest, r1, r2, r3, e2, lg10
+      real(4) pos, sig, left, right, farleft, A(0:3), F(0:3)
+      real(4) dx, ftest, r1, r2, r3, e2
       integer(4) cnt, cnt1, cnt2, cnt3
 
       e2 = exp(-0.5*ns*ns)
-      lg10 = log(10.)
 
       pos = respar(1)      ! centroid
       sig = respar(2)      ! width
@@ -1105,22 +1103,18 @@ contains
       farleft = respar(5)  ! far left slope
 
       ! compute function amplitudes
-      A0 = 0.1*(1. + e2)
-      A1 = 1. + e2
-      A2 = 1. + exp(right*ns*sig)
-      A3 = (e2 + exp(right*2.*ns*sig))/exp(right*2.*ns*sig)
+      A(0) = 0.1*(1. + e2)
+      A(1) = 1. + e2
+      A(2) = 1. + exp(right*ns*sig)
+      A(3) = (e2 + exp(right*2.*ns*sig))/exp(right*2.*ns*sig)
 
       ! compute function areas
-      F0 = A0/farleft * (1. - exp(farleft*(lg10/left+ns*sig-pos-1.)))  ! [-1, 1/10left]
-      F1 = A1/left * 9./10.                                            ! [1/10, pos-ns*sig]
-      F2 = A2 * 2.*ns*sig                                              ! [pos-ns*sig, pos+ns*sig]
-      F3 = A3/right * (exp(right*(1.-pos+ns*sig))-exp(right*2.*ns*sig))! [pos + ns*sig, 1]
+      F(0) = A(0)/farleft * (1. - exp(farleft*(lg10/left+ns*sig-pos-1.)))  ! [-1, 1/10left]
+      F(1) = A(1)/left * 9./10.                                            ! [1/10, pos-ns*sig]
+      F(2) = A(2) * 2.*ns*sig                                              ! [pos-ns*sig, pos+ns*sig]
+      F(3) = A(3)/right * (exp(right*(1.-pos+ns*sig))-exp(right*2.*ns*sig))! [pos + ns*sig, 1]
 
-      F = F0 + F1 + F2 + F3
-      F0 = F0/F   ! normalize areas
-      F1 = F1/F
-      F2 = F2/F
-      F3 = F3/F
+      F(0:3) = F(0:3)/sum(F)   ! normalize areas
 
       ! sample dx by comparing with piece-wise function
 
@@ -1130,7 +1124,7 @@ contains
          cnt3 = 0
          r1 = ran(iseed)
          ! select region and sample test function
-         if  (r1<F0) then             ! far left tail
+         if  (r1 < F(0)) then             ! far left tail
 
             do
                cnt1 = cnt1 + 1
@@ -1139,9 +1133,9 @@ contains
                if (cnt1==1000) write(6,*) 'cnt1=1000 ', pos, sig, farleft
                if (dx>=-1. .or. cnt1>=1000) exit  ! limit range to >=-1
             end do
-            ftest = A0 * exp(farleft*(dx+lg10/left-pos+ns*sig))
+            ftest = A(0) * exp(farleft*(dx+lg10/left-pos+ns*sig))
 
-         else if (r1<F0+F1) then      ! left tail
+         else if (r1 < sum(F(0:1))) then      ! left tail
 
             do
                cnt2 = cnt2 + 1
@@ -1150,13 +1144,13 @@ contains
                if (cnt2==1000) write(6,*) 'cnt2=1000', pos, sig, left
                if (dx>=-lg10/left-ns*sig+pos .or. cnt2>=1000) exit
             end do
-            ftest = A1 * exp(left*(dx-pos+ns*sig))
+            ftest = A(1) * exp(left*(dx-pos+ns*sig))
 
-         else if (r1<F0+F1+F2) then   ! peak region
+         else if (r1 < sum(F(0:2))) then   ! peak region
 
             r2 = ran(iseed) - 0.5
             dx = 2.*ns*sig*r2 + pos
-            ftest = A2
+            ftest = A(2)
 
          else                            ! right tail
 
@@ -1167,7 +1161,7 @@ contains
                if (cnt3==1000) write(6,*) 'cnt3=1000', pos, sig, right
                if (dx<=1. .or. cnt3>=1000) exit  ! limit range to <=1
             end do
-            ftest = A3 * exp(right*(dx-pos+ns*sig))
+            ftest = A(3) * exp(right*(dx-pos+ns*sig))
 
          end if
 
