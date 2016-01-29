@@ -103,17 +103,10 @@ contains
       real(4), intent(in) :: p0, theta0, phi0
       integer(4), intent(in), optional :: mode
 
-      real(4) p, theta, phi
-      real(4) u, v, w
-      integer(4) ix, iy, iz, i, j, k
-      integer(4) ilo, ihi, jlo, jhi, klo, khi
-      real(4) sum, Kx, Ky, Kz, kernel
-      integer(4) xdim, ydim, zdim
+      real(4) p, theta, phi, u, v, w, sum, Kx, Ky, Kz
+      integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi
+      integer(4) xdim, ydim, zdim, mod_
       real(4) plo, pup, dp, thlo, thup, dth, phlo, phup, dph
-
-      integer(4) retcode, readHAFTmatrix
-      real(4) getMatrixVal
-      integer(4) mod_
 
       if (present(mode)) then
         mod_ = mode
@@ -123,8 +116,7 @@ contains
 
       getHadesAcceptance = 0.
 
-      retcode = readHAFTmatrix()
-      if (retcode==-1) return
+      if (readHAFTmatrix()==-1) return
 
       call getDimensions(pid,xdim,ydim,zdim)
       call getLimits(pid,plo,pup,dp,thlo,thup,dth,phlo,phup,dph) 
@@ -212,21 +204,14 @@ contains
       real(4), intent(in) :: mass0, pt0, rap0
       integer(4), intent(in), optional :: mode
 
-      real(4) mass, pt, rap
-      real(4) u, v, w
-      integer(4) ix, iy, iz, i, j, k
-      integer(4) ilo, ihi, jlo, jhi, klo, khi
-      real(4) sum, Kx, Ky, Kz, kernel
-      integer(4) xdim, ydim, zdim
+      real(4) mass, pt, rap, u, v, w, sum, Kx, Ky, Kz
+      integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi
+      integer(4) xdim, ydim, zdim, mod
       real(4) mlo, mup, dm, ptlo, ptup, dpt, raplo, rapup, drap
 
-      integer(4) retcode, readHAFTPairmatrix
-      real(4) getMatrixVal
-      integer(4) mod
-
       getHadesPairAcceptance = 0.
-      retcode = readHAFTPairMatrix()
-      if (retcode==-1) return
+
+      if (readHAFTPairMatrix()==-1) return
 
       if (present(mode)) then
         mod = mode  ! (use mode = 0 or 1, otherwise problems at pt=0!)
@@ -406,46 +391,36 @@ contains
     !
       integer(4), parameter :: runit = 77  ! change if input unit is already busy
 
-      integer(4) pid
-      integer(4) i
+      integer(4) pid, i, bins
       integer(4) bytes       ! byte counter
-      integer(4) bins
-      integer(4) lc          ! string length
 
       readHAFTmatrix = 0
 
       if (readflag==1) return
 
       readflag = 0
-      do i=1,size           ! set all matrices to 0
-        matrix2(i) = 0.
-        matrix3(i) = 0.
-        matrix8(i) = 0.
-        matrix9(i) = 0. 
-        matrix10(i) = 0.
-        matrix12(i) = 0.
-        matrix14(i) = 0.
-      end do
-      do i=1,nids
-        xdim(i) = 0
-        ydim(i) = 0
-        zdim(i) = 0
-        pmin(i) = 0.
-        pmax(i) = 0.
-        dp(i) = 0.
-        thmin(i) = 0.
-        thmax(i) = 0.
-        dth(i) = 0.
-        phmin(i) = 0.
-        phmax(i) = 0.
-        dph(i) = 0.
-      end do
+      ! set all matrices to 0
+      matrix2(:) = 0.
+      matrix3(:) = 0.
+      matrix8(:) = 0.
+      matrix9(:) = 0.
+      matrix10(:) = 0.
+      matrix12(:) = 0.
+      matrix14(:) = 0.
 
-      lc = len(fname)
-      do i=1,lc
-         if (fname(i:i+3)=='.acc') goto 1
-      end do
- 1    lc = i+3
+      xdim(:) = 0
+      ydim(:) = 0
+      zdim(:) = 0
+      pmin(:) = 0.
+      pmax(:) = 0.
+      dp(:) = 0.
+      thmin(:) = 0.
+      thmax(:) = 0.
+      dth(:) = 0.
+      phmin(:) = 0.
+      phmax(:) = 0.
+      dph(:) = 0.
+
       open(unit=runit,file=fname,access='stream',status='old',err=99)
       bytes=1
       write(6,*) ' '
@@ -462,7 +437,7 @@ contains
       if (pid<0) goto 45
       if (pid<1 .or. pid>nids) goto 50
 
-!ccccccccccccccc read acceptance matrix 
+      ! read acceptance matrix
 
       bytes = bytes + 4
       read(runit,pos=bytes,err=100) xdim(pid), ydim(pid), zdim(pid)
@@ -515,7 +490,7 @@ contains
 
       goto 40  ! loop until EOF is reached
 
-!ccccccccccccccc read resolution parameters 
+      ! read resolution parameters
 
  45   pid = -pid
       if (pid<2 .or. pid>3) goto 102
@@ -608,19 +583,19 @@ contains
 !     Error opening or reading
 
  99   close(runit)
-      write(6,*) 'Open error on unit ', runit, ' File = ',fname(1:lc)
+      write(6,*) 'Open error on unit ', runit, ' File = ',trim(fname)
       readHAFTMatrix = -1
       return
  100  close(runit)
-      write(6,*) 'Read error on unit ', runit, ' File = ',fname(1:lc)
+      write(6,*) 'Read error on unit ', runit, ' File = ',trim(fname)
       readHAFTmatrix = -1
       return
  101  close(runit)
-      write(6,*) 'Size error: ', bins, ' >', size,' File = ',fname(1:lc)
+      write(6,*) 'Size error: ', bins, ' >', size,' File = ',trim(fname)
       readHAFTmatrix = -1
       return
  102  close(runit)
-      write(6,*) 'PID not yet supported: ', pid, ' File = ',fname(1:lc)
+      write(6,*) 'PID not yet supported: ', pid, ' File = ',trim(fname)
       readHAFTmatrix = -1
       return
   end function readHAFTmatrix
@@ -634,25 +609,17 @@ contains
     !
       integer(4), parameter :: runit = 78  ! change if input unit is already busy
 
-      integer(4) i
+      integer(4) i, bins
       integer(4) bytes       ! byte counter
-      integer(4) bins
-      integer(4) lc
 
       readHAFTPairMatrix = 0
 
       if (readflag2==1) return
 
       readflag2 = 0
-      do i=1,size           ! set matrix to 0
-        matrix51(i) = 0.
-      end do
+      ! set matrix to 0
+      matrix51(:) = 0.
 
-      lc = len(fname2)
-      do i=1,lc
-         if (fname2(i:i+3)=='.acc') goto 1
-      end do
- 1    lc = i+3
       open(unit=runit,file=fname2,access='stream',status='old',err=99)
       bytes=1
       read(runit,pos=bytes,err=100) comment2
@@ -688,15 +655,15 @@ contains
 !     Error opening or reading
 
  99   close(runit)
-      write(6,*) 'Open error on unit ', runit, ' File = ',fname2(1:lc)
+      write(6,*) 'Open error on unit ', runit, ' File = ',trim(fname2)
       readHAFTPairMatrix = -1
       return
  100  close(runit)
-      write(6,*) 'Read error on unit ', runit, ' File = ',fname2(1:lc)
+      write(6,*) 'Read error on unit ', runit, ' File = ',trim(fname2)
       readHAFTPairMatrix = -1
       return
  101  close(runit)
-      write(6,*) 'Size error: ', bins,' >',size, ' File = ',fname2(1:lc)
+      write(6,*) 'Size error: ', bins,' >',size, ' File = ',trim(fname2)
       readHAFTPairMatrix = -1
       return
   end function readHAFTPairMatrix
@@ -709,7 +676,7 @@ contains
     !
       character*(*), intent(in) :: name
 
-      integer(4) dummy, readHAFTmatrix
+      integer(4) dummy
 
       fname = name
       dummy = readHAFTmatrix()
@@ -727,7 +694,7 @@ contains
     !
       character*(*), intent(in) :: name
 
-      integer(4) dummy, readHAFTPairMatrix
+      integer(4) dummy
 
       fname2 = name
       dummy = readHAFTPairMatrix()
@@ -746,8 +713,7 @@ contains
     !
       integer(4), intent(in) :: i, j, k, pid
 
-      integer(4) xdi, ydi, zdi
-      integer(4) i1, j1, k1, ilin
+      integer(4) xdi, ydi, zdi, i1, j1, k1, ilin
 
       call getDimensions(pid,xdi,ydi,zdi)
 
@@ -820,7 +786,7 @@ contains
       integer(4), intent(out) :: nx, ny, nz
 
       if (pid==51) then  ! pair
-        nx  = xdim2
+        nx = xdim2
         ny = ydim2
         nz = zdim2
       else
@@ -859,17 +825,13 @@ contains
       real(4), intent(inout) :: mom(4)
       integer(4), intent(in) :: mode,pid
 
-      integer(4) retcode, readHAFTmatrix
-      real(4) mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
-      real(4) sigp, sampleGauss, betainv, sigms, sigms2, sigthms, sigphms
-      real(4), parameter :: r2d = 180./pi
-      real(4) ploss
-      real(4) respar(10), param, sampleMP
       integer(4) i
+      real(4) mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
+      real(4) sigp, betainv, sigms, sigms2, sigthms, sigphms, ploss, respar(10)
+      real(4), parameter :: r2d = 180./pi
 
       if (readflag==0) then
-        retcode = readHAFTmatrix()
-        if (retcode==-1) return
+        if (readHAFTmatrix()==-1) return
       end if
 
       pt2 = mom(1)**2 + mom(2)**2
@@ -942,7 +904,7 @@ contains
       mom(1) = ptot*sinth*cos(phi)            ! new momentum components
       mom(2) = ptot*sinth*sin(phi)
       mom(3) = ptot*cos(theta)
-      mom(4) = sqrt(mom(1)**2 + mom(2)**2 + mom(3)**2 + mass2)  ! total energy
+      mom(4) = sqrt(sum(mom(1:3)**2) + mass2)  ! total energy
 
   end subroutine smearHades4Momentum
 
@@ -973,8 +935,7 @@ contains
       real(4), intent(inout) :: mom3(3)
       integer(4), intent(in) :: mode,pid
 
-      real(4) mom4(4)
-      real(4) mass
+      real(4) mom4(4), mass
 
       if (mode<1 .or. mode>3) return    ! unknown mode
 
@@ -990,14 +951,10 @@ contains
          return  ! particle is not supported
       end if
 
-      mom4(1) = mom3(1)
-      mom4(2) = mom3(2)
-      mom4(3) = mom3(3)
-      mom4(4) = sqrt(mom3(1)**2+mom3(2)**2+mom3(3)**2 + mass**2)
+      mom4(1:3) = mom3(1:3)
+      mom4(4) = sqrt(sum(mom3(:)**2) + mass**2)
       call smearHades4Momentum(mom4,mode,pid)
-      mom3(1) = mom4(1)
-      mom3(2) = mom4(2)
-      mom3(3) = mom4(3)
+      mom3(1:3) = mom4(1:3)
   end subroutine smearHades3Momentum
 
 
@@ -1010,9 +967,7 @@ contains
       real(4), intent(inout) :: pair(3)
       integer(4), intent(in) :: mode
 
-      real(4) m, pt, rap, sigpt, sigm, sigrap
-      real(4) sampleGauss
-      integer(4) retcode, readHAFTmatrix
+      real(4) m, pt, rap, sigpt, sigm, sigrap, respar(10)
 
       real(4), parameter :: mtab(10) = (/ 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2 /)  ! mass grid
       real(4), parameter :: par1(10) = (/ 0.0077, -0.0082, -0.0125, -0.0120, -0.0114, &
@@ -1025,11 +980,8 @@ contains
                                         -21.6, -20.6, -19.4, -18.2, -17.9 /)
       real(4), parameter :: par5(10) = (/ 18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7 /)
 
-      real(4) respar(10), interpol, sampleMP
-
       if (readflag==0) then
-        retcode = readHAFTmatrix()
-        if (retcode==-1) return
+        if (readHAFTmatrix()==-1) return
       end if
 
       m = pair(1)
@@ -1091,10 +1043,7 @@ contains
     !
       real(4), intent(in) :: x, respar(10), ns
 
-      real(4) pos, sig, left, right, farleft
-      real(4) argn, argp, argn2
-      real(4) e2, lg10
-      real(4) amp
+      real(4) pos, sig, left, right, farleft, argn, argp, argn2, e2, lg10, amp
 
       e2 = exp(-0.5*ns*ns)
       lg10 = log(10.)
@@ -1142,14 +1091,9 @@ contains
     !
       real(4), intent(in) :: respar(10), ns
 
-      real(4) pos, sig, left, right, farleft
-      real(4) A0, A1, A2, A3
-      real(4) F0, F1, F2, F3, F
-      real(4) dx, ftest
-      real(4) r1, r2, r3
+      real(4) pos, sig, left, right, farleft, A0, A1, A2, A3, F0, F1, F2, F3, F
+      real(4) dx, ftest, r1, r2, r3, e2, lg10
       integer(4) cnt, cnt1, cnt2, cnt3
-      real(4) momSpread
-      real(4) e2, lg10
 
       e2 = exp(-0.5*ns*ns)
       lg10 = log(10.)
@@ -1282,12 +1226,9 @@ contains
       real(4), intent(in) :: pin, thin
       integer(4), intent(in) :: pid, itab
 
-      real(4) p, th
-      integer(4) xdi, ydi
-      real(4) plo, pup, dp0, thlo, thup, dth0
-      integer(4) i, j, ix, iy, ilo, ihi, jlo, jhi
-      integer(4) mod
-      real(4) sum, u, v, kernel, Kx, Ky, getTableVal
+      integer(4) xdi, ydi, i, j, ix, iy, ilo, ihi, jlo, jhi, mod
+      real(4) p, th, plo, pup, dp0, thlo, thup, dth0
+      real(4) sum, u, v, Kx, Ky
 
       mod = 1
       param = 0.
@@ -1352,8 +1293,7 @@ contains
     !
       integer(4), intent(in) :: i, j, pid, itab
 
-      integer(4) xdi, ydi
-      integer(4) i1, j1, ilin
+      integer(4) xdi, ydi, i1, j1, ilin
 
       getTableVal = 0.
       if (pid<1 .or. pid>nids) return
@@ -1406,9 +1346,8 @@ contains
       do i=2,n
         interpol = ytab(i)
         if (x==xtab(i)) return
-        if (x<xtab(i)) goto 10
+        if (x<xtab(i)) exit
       end do
- 10   continue
 
       a = ytab(i-1)
       b = (ytab(i)-ytab(i-1))/(xtab(i)-xtab(i-1))
