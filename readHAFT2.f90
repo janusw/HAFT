@@ -45,7 +45,6 @@ module HAFT
   character(len=200), save :: fname  = 'HadesAcceptanceFilter.acc', &
                               fname2 = 'HadesPairAcceptanceFilter.acc'
 
-  integer(4), save :: iseed = 123
   integer(4), save :: readflag = 0, readflag2 = 0
 
   character(len=80) :: comment, comment2
@@ -1022,18 +1021,17 @@ contains
 
   !*****************************************************************************
   !  Return random number according to a normal distribution.
-  !
-  !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
   !*****************************************************************************
   real(4) function sampleGauss(mean,sigma)
       real(4), intent(in) :: mean, sigma
 
-      real(4) theta
+      real(4) theta, r(2)
 
       sampleGauss = mean
       if (sigma<=0.) return
-      theta = twopi*ran(iseed)
-      sampleGauss = mean + sigma*cos(theta)*sqrt(-2.*log(ran(iseed)))
+      call random_number(r)
+      theta = twopi*r(1)
+      sampleGauss = mean + sigma*cos(theta)*sqrt(-2.*log(r(2)))
   end function sampleGauss
 
 
@@ -1086,8 +1084,6 @@ contains
 
   !*****************************************************************************
   !  Return random number according to the normalized HADES momentum distribution.
-  !
-  !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
   !*****************************************************************************
   real(4) function sampleMP(respar,ns)
 
@@ -1125,13 +1121,14 @@ contains
          cnt1 = 0
          cnt2 = 0
          cnt3 = 0
-         r1 = ran(iseed)
+         call random_number(r1)
          ! select region and sample test function
          if  (r1 < F(0)) then             ! far left tail
 
             do
                cnt1 = cnt1 + 1
-               r2 = log(ran(iseed))
+               call random_number(r2)
+               r2 = log(r2)
                dx = r2/farleft - ns*sig + pos - lg10/left
                if (cnt1==1000) write(6,*) 'cnt1=1000 ', pos, sig, farleft
                if (dx>=-1. .or. cnt1>=1000) exit  ! limit range to >=-1
@@ -1142,7 +1139,8 @@ contains
 
             do
                cnt2 = cnt2 + 1
-               r2 = log(ran(iseed))
+               call random_number(r2)
+               r2 = log(r2)
                dx = r2/left - ns*sig + pos
                if (cnt2==1000) write(6,*) 'cnt2=1000', pos, sig, left
                if (dx>=-lg10/left-ns*sig+pos .or. cnt2>=1000) exit
@@ -1151,7 +1149,8 @@ contains
 
          else if (r1 < sum(F(0:2))) then   ! peak region
 
-            r2 = ran(iseed) - 0.5
+            call random_number(r2)
+            r2 = r2 - 0.5
             dx = 2.*ns*sig*r2 + pos
             ftest = A(2)
 
@@ -1159,7 +1158,8 @@ contains
 
             do
                cnt3 = cnt3 + 1
-               r2 = log(ran(iseed))
+               call random_number(r2)
+               r2 = log(r2)
                dx = r2/right + ns*sig + pos
                if (cnt3==1000) write(6,*) 'cnt3=1000', pos, sig, right
                if (dx<=1. .or. cnt3>=1000) exit  ! limit range to <=1
@@ -1171,7 +1171,7 @@ contains
          ! do rejection test
          sampleMP = dx
 
-         r3 = ran(iseed)
+         call random_number(r3)
          if ( r3<momSpread(dx,respar,ns)/ftest ) return
 
       end do
