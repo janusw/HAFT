@@ -580,7 +580,7 @@ contains
       readflag = 1
       return
 
-!     Error opening or reading
+      ! Error opening or reading
 
  99   close(runit)
       write(6,*) 'Open error on unit ', runit, ' File = ',trim(fname)
@@ -652,7 +652,7 @@ contains
       readflag2 = 1
       return
 
-!     Error opening or reading
+      ! Error opening or reading
 
  99   close(runit)
       write(6,*) 'Open error on unit ', runit, ' File = ',trim(fname2)
@@ -860,7 +860,7 @@ contains
       if (pt>0.) phi = acos(mom(1)/pt)
       if (mom(2)<0.) phi = twopi - phi     ! azimuthal angle in radian
 
-!  If resolution parameters are available, use dedicated smearing
+      !  If resolution parameters are available, use dedicated smearing
 
       if (resflag(pid)==1) then   ! resolution parameters are loaded for pid?
 
@@ -1104,13 +1104,13 @@ contains
       right = respar(4)    ! right slope
       farleft = respar(5)  ! far left slope
 
-!    compute function amplitudes
+      ! compute function amplitudes
       A0 = 0.1*(1. + e2)
       A1 = 1. + e2
       A2 = 1. + exp(right*ns*sig)
       A3 = (e2 + exp(right*2.*ns*sig))/exp(right*2.*ns*sig)
 
-!    compute function areas
+      ! compute function areas
       F0 = A0/farleft * (1. - exp(farleft*(lg10/left+ns*sig-pos-1.)))  ! [-1, 1/10left]
       F1 = A1/left * 9./10.                                            ! [1/10, pos-ns*sig]
       F2 = A2 * 2.*ns*sig                                              ! [pos-ns*sig, pos+ns*sig]
@@ -1122,14 +1122,14 @@ contains
       F2 = F2/F
       F3 = F3/F
 
-!    sample dx by comparing with piece-wise function
+      ! sample dx by comparing with piece-wise function
 
       do cnt=1,1000    ! allow max 1000 trials
          cnt1 = 0
          cnt2 = 0
          cnt3 = 0
          r1 = ran(iseed)
-!    select region and sample test function
+         ! select region and sample test function
          if  (r1<F0) then             ! far left tail
 
             do
@@ -1171,7 +1171,7 @@ contains
 
          end if
 
-!   do rejection test
+         ! do rejection test
          sampleMP = dx
 
          r3 = ran(iseed)
