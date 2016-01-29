@@ -129,9 +129,9 @@ contains
       phi = phi0
       if (phi > 60.) phi = mod(phi,60._4)   ! modulo HADES sector
 
-      ix = xdim*((p-0.5*dp-plo)/(pup-plo)) + 1      ! floor indexes
-      iy = ydim*((theta-0.5*dth-thlo)/(thup-thlo)) + 1
-      iz = zdim*((phi-0.5*dph-phlo)/(phup-phlo)) + 1
+      ix = int(xdim*((p-0.5*dp-plo)/(pup-plo))) + 1      ! floor indices
+      iy = int(ydim*((theta-0.5*dth-thlo)/(thup-thlo))) + 1
+      iz = int(zdim*((phi-0.5*dph-phlo)/(phup-phlo))) + 1
 
       select case (mod_)
       case (0,1)  ! set summation limits
@@ -230,9 +230,9 @@ contains
       pt = pt0
       rap = rap0
 
-      ix = xdim*((mass-0.5*dm-mlo)/(mup-mlo)) + 1      ! floor indexes
-      iy = ydim*((pt-0.5*dpt-ptlo)/(ptup-ptlo)) + 1
-      iz = zdim*((rap-0.5*drap-raplo)/(rapup-raplo)) + 1
+      ix = int(xdim*((mass-0.5*dm-mlo)/(mup-mlo))) + 1      ! floor indices
+      iy = int(ydim*((pt-0.5*dpt-ptlo)/(ptup-ptlo))) + 1
+      iz = int(zdim*((rap-0.5*drap-raplo)/(rapup-raplo))) + 1
 
       select case (mod)
       case (0,1)  ! set summation limits
@@ -1250,8 +1250,8 @@ contains
       xdi = xdimp(pid) ! get table dimensions
       ydi = ydimp(pid)
 
-      ix = xdi*((p-0.5*dp0-plo)/(pup-plo)) + 1      ! floor indices
-      iy = ydi*((th-0.5*dth0-thlo)/(thup-thlo)) + 1
+      ix = int(xdi*((p-0.5*dp0-plo)/(pup-plo))) + 1      ! floor indices
+      iy = int(ydi*((th-0.5*dth0-thlo)/(thup-thlo))) + 1
 
       if (mod==0 .or. mod==1) then   ! set summation limits
         ilo = ix
