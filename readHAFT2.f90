@@ -1132,22 +1132,24 @@ contains
 !    select region and sample test function
          if  (r1<F0) then             ! far left tail
 
- 10         continue
+            do
                cnt1 = cnt1 + 1
                r2 = log(ran(iseed))
                dx = r2/farleft - ns*sig + pos - lg10/left
-            if (cnt1==1000) write(6,*) 'cnt1=1000 ', pos, sig, farleft
-            if (dx<-1. .and. cnt1<1000) goto 10  ! limit range to >=-1
+               if (cnt1==1000) write(6,*) 'cnt1=1000 ', pos, sig, farleft
+               if (dx>=-1. .or. cnt1>=1000) exit  ! limit range to >=-1
+            end do
             ftest = A0 * exp(farleft*(dx+lg10/left-pos+ns*sig))
 
          else if (r1<F0+F1) then      ! left tail
 
- 20         continue
+            do
                cnt2 = cnt2 + 1
                r2 = log(ran(iseed))
                dx = r2/left - ns*sig + pos
-            if (cnt2==1000) write(6,*) 'cnt2=1000', pos, sig, left
-            if (dx<-lg10/left-ns*sig+pos .and. cnt2<1000) goto 20
+               if (cnt2==1000) write(6,*) 'cnt2=1000', pos, sig, left
+               if (dx>=-lg10/left-ns*sig+pos .or. cnt2>=1000) exit
+            end do
             ftest = A1 * exp(left*(dx-pos+ns*sig))
 
          else if (r1<F0+F1+F2) then   ! peak region
@@ -1158,12 +1160,13 @@ contains
 
          else                            ! right tail
 
- 30         continue
+            do
                cnt3 = cnt3 + 1
                r2 = log(ran(iseed))
                dx = r2/right + ns*sig + pos
-            if (cnt3==1000) write(6,*) 'cnt3=1000', pos, sig, right
-            if (dx>1. .and. cnt3<1000) goto 30 ! limit range to <=1
+               if (cnt3==1000) write(6,*) 'cnt3=1000', pos, sig, right
+               if (dx<=1. .or. cnt3>=1000) exit  ! limit range to <=1
+            end do
             ftest = A3 * exp(right*(dx-pos+ns*sig))
 
          end if
