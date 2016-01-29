@@ -912,7 +912,7 @@ contains
 
 
   subroutine smearHadesMomentum(p,mode,pid)
-      real(8), intent(inout) :: p(0:3)
+      real, intent(inout) :: p(0:3)
       integer(4), intent(in) :: mode, pid
 
       real(4) mom4(4)
