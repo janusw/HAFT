@@ -1076,8 +1076,8 @@ contains
       momSpread = exp( -0.5*((x-pos)/sig)*((x-pos)/sig) )               &  ! Gauss
              + amp*exp(  left*(x-(pos-ns*sig)) )*argn                   &  ! left tail (connects to Gauss at pos-ns*sig
              + amp*exp( right*(x-(pos-ns*sig)) )*argp                   &  ! right tail (Gauss sits on top of it)
-             + 0.1*amp*exp( farleft*(x-(-lg10/left+pos-ns*sig)) )*argn2 &  ! far left tail
-                                                                        &  ! (joins left tail where decayed to 1/10)
+             + 0.1*amp*exp( farleft*(x-(-lg10/left+pos-ns*sig)) )*argn2    ! far left tail
+                                                                           ! (joins left tail where decayed to 1/10)
   end function momSpread
 
 
