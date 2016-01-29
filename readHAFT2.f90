@@ -22,7 +22,6 @@
 !          3) sample pair acceptance values with calls to
 !                 acc = getHadesPairAcceptance(mass,pt,rapidity,mode)
 !*******************************************************************************
-
 module HAFT
 
   implicit none
@@ -68,37 +67,38 @@ module HAFT
 contains
 
 
+  !*****************************************************************************
+  !  Returns HADES acceptance for particle id of given momentum (in GeV/c),
+  !  polar angle theta (in deg.) and azimuthal angle phi (in deg.)
+  !  by table interpolation.
+  !
+  !  Lab frame used: z = beam axis, y = vertical axis
+  !
+  !                 ^ y
+  !            x \  |
+  !               \ |
+  !                \|    z
+  !                 O---->
+  !
+  !  id = 2 : positron
+  !     = 3 : electron
+  !     = 8 : pi+
+  !     = 9 : pi-
+  !     = 10: K+
+  !     = 12: K-
+  !     = 14: proton
+  !
+  !  mode = 0 : nearest-neighbour interpolation
+  !       = 1 : tri-linear interpolation
+  !       = 2 : tri-quadratic interpolation
+  !       =-2 : tri-quadratic B-spline interpolation
+  !       = 3 : tri-cubic interpolation
+  !       =-3 : tri-cubic B-spline interpolation
+  !       = 4 : tri-cubic Catmull-Rom spline
+  !       =-4 : tri-cubic optimal cardinal spline
+  !*****************************************************************************
   real(4) function getHadesAcceptance(pid,p0,theta0,phi0,mode)
-    !
-    !  Returns HADES acceptance for particle id of given momentum (in GeV/c),
-    !  polar angle theta (in deg.) and azimuthal angle phi (in deg.)
-    !  by table interpolation.
-    !
-    !  Lab frame used: z = beam axis, y = vertical axis
-    !
-    !                 ^ y
-    !            x \  |
-    !               \ |
-    !                \|    z
-    !                 O---->
-    !
-    !  id = 2 : positron
-    !     = 3 : electron
-    !     = 8 : pi+
-    !     = 9 : pi-
-    !     = 10: K+
-    !     = 12: K-
-    !     = 14: proton
-    !
-    !  mode = 0 : nearest-neighbour interpolation
-    !       = 1 : tri-linear interpolation
-    !       = 2 : tri-quadratic interpolation
-    !       =-2 : tri-quadratic B-spline interpolation
-    !       = 3 : tri-cubic interpolation
-    !       =-3 : tri-cubic B-spline interpolation
-    !       = 4 : tri-cubic Catmull-Rom spline
-    !       =-4 : tri-cubic optimal cardinal spline
-    !
+
       integer(4), intent(in) :: pid
       real(4), intent(in) :: p0, theta0, phi0
       integer(4), intent(in), optional :: mode
@@ -177,30 +177,31 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Returns HADES pair acceptance for given mass (in GeV/c**2),
+  !  transverse momentum (in GeV/c) and rapidity (in lab frame)
+  !  by table interpolation.
+  !
+  !  Lab frame used: z = beam axis, y = vertical axis
+  !
+  !                 ^ y
+  !            x \  |
+  !               \ |
+  !                \|    z
+  !                 O---->
+  !
+  !
+  !  mode = 0 : nearest-neighbour interpolation
+  !       = 1 : tri-linear interpolation
+  !       = 2 : tri-quadratic interpolation
+  !       =-2 : tri-quadratic B-spline interpolation
+  !       = 3 : tri-cubic interpolation
+  !       =-3 : tri-cubic B-spline interpolation
+  !       = 4 : tri-cubic Catmull-Rom spline
+  !       =-4 : tri-cubic optimal cardinal spline
+  !*****************************************************************************
   real(4) function getHadesPairAcceptance(mass0,pt0,rap0,mode)
-    !
-    !  Returns HADES pair acceptance for given mass (in GeV/c**2),
-    !  transverse momentum (in GeV/c) and rapidity (in lab frame)
-    !  by table interpolation.
-    !
-    !  Lab frame used: z = beam axis, y = vertical axis
-    !
-    !                 ^ y
-    !            x \  |
-    !               \ |
-    !                \|    z
-    !                 O---->
-    !
-    !
-    !  mode = 0 : nearest-neighbour interpolation
-    !       = 1 : tri-linear interpolation
-    !       = 2 : tri-quadratic interpolation
-    !       =-2 : tri-quadratic B-spline interpolation
-    !       = 3 : tri-cubic interpolation
-    !       =-3 : tri-cubic B-spline interpolation
-    !       = 4 : tri-cubic Catmull-Rom spline
-    !       =-4 : tri-cubic optimal cardinal spline
-    !
+
       real(4), intent(in) :: mass0, pt0, rap0
       integer(4), intent(in), optional :: mode
 
@@ -277,22 +278,23 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Compute interpolation kernel
+  !
+  !  mode = 0: nearest neighbour
+  !       = 1: piece-wise linear
+  !       = 2: piece-wise quadratic
+  !       =-2: quadratic B-spline
+  !       = 3: cubic spline (B=0,C=1)
+  !       =-3: cubic B-spline (B=1, C=0)
+  !       = 4: cubic Catmull-Rom spline (B=0, C=1/2)
+  !       =-4: cubic "optimal" cardinal spline (B=1/3, C=1/3)
+  !
+  !  mode >=0: interpolating (i.e. exact at grid points)
+  !  mode < 0: approximating (i.e. not exact, but smoother)
+  !*****************************************************************************
   real(4) function kernel(u,mode)
-    !
-    !  Compute interpolation kernel
-    !
-    !  mode = 0: nearest neighbour
-    !       = 1: piece-wise linear
-    !       = 2: piece-wise quadratic
-    !       =-2: quadratic B-spline
-    !       = 3: cubic spline (B=0,C=1)
-    !       =-3: cubic B-spline (B=1, C=0)
-    !       = 4: cubic Catmull-Rom spline (B=0, C=1/2)
-    !       =-4: cubic "optimal" cardinal spline (B=1/3, C=1/3)
-    !
-    !  mode >=0: interpolating (i.e. exact at grid points)
-    !  mode < 0: approximating (i.e. not exact, but smoother)
-    !
+
       real(4), intent(in) :: u
       integer(4), intent(in) :: mode
 
@@ -384,11 +386,12 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Opens file in unformatted direct access mode
+  !  and reads HADES acceptance matrices (as linearized arrays)
+  !*****************************************************************************
   integer(4) function readHAFTmatrix()
-    !
-    !  Opens file in unformatted direct access mode
-    !  and reads HADES acceptance matrices (as linearized arrays)
-    !
+
       integer(4), parameter :: runit = 77  ! change if input unit is already busy
 
       integer(4) pid, i, bins
@@ -602,11 +605,12 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Opens file in unformatted direct access mode
+  !  and reads HADES pair acceptance matrix (as linearized array)
+  !*****************************************************************************
   integer(4) function readHAFTPairMatrix()
-    !
-    !  Opens file in unformatted direct access mode
-    !  and reads HADES pair acceptance matrix (as linearized array)
-    !
+
       integer(4), parameter :: runit = 78  ! change if input unit is already busy
 
       integer(4) i, bins
@@ -670,10 +674,10 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Sets name of input file containing the filter
+  !*****************************************************************************
   subroutine setFileName(name)
-    !
-    !  Sets name of input file containing the filter
-    !
       character*(*), intent(in) :: name
 
       integer(4) dummy
@@ -683,15 +687,14 @@ contains
 
 !      write(6,'(''name  |'',a80,''|'')') name
 !      write(6,'(''fname |'',a80,''|'')') fname
-
   end subroutine setFileName
 
 
 
+  !*****************************************************************************
+  !  Sets name of input file containing the filter
+  !*****************************************************************************
   subroutine setPairFileName(name)
-    !
-    !  Sets name of input file containing the filter
-    !
       character*(*), intent(in) :: name
 
       integer(4) dummy
@@ -701,16 +704,15 @@ contains
 
 !      write(6,'(''name  |'',a80,''|'')') name
 !      write(6,'(''fname2 |'',a80,''|'')') fname2
-
   end subroutine setPairFileName
 
 
 
+  !*****************************************************************************
+  !  Returns acceptance value at cell (i,j,k) of linearized matrix
+  !  for particle ID
+  !*****************************************************************************
   real(4) function getMatrixVal(i,j,k,pid)
-    !
-    !  Returns acceptance value at cell (i,j,k) of linearized matrix
-    !  for particle ID
-    !
       integer(4), intent(in) :: i, j, k, pid
 
       integer(4) xdi, ydi, zdi, i1, j1, k1, ilin
@@ -746,10 +748,10 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Return the lower and upper limits, and step sizes of the table
+  !*****************************************************************************
   subroutine getLimits(pid,xlo,xhi,dx,ylo,yhi,dy,zlo,zhi,dz) 
-    !
-    !  Return the lower and upper limits, and step sizes of the table
-    !
       integer(4), intent(in) :: pid
       real(4), intent(out) :: xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
 
@@ -778,10 +780,10 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Return the dimensions of a table of particle pid
+  !*****************************************************************************
   subroutine getDimensions(pid,nx,ny,nz)
-    !
-    !  Return the dimensions of a table of particle pid
-    !
       integer(4), intent(in)  :: pid
       integer(4), intent(out) :: nx, ny, nz
 
@@ -798,30 +800,30 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Apply the Hades momentum resolution to a 4-momentum vector (in GeV/c)
+  !
+  !  Lab frame used: z = beam axis, y = vertical axis
+  !
+  !                 ^ y
+  !            x \  |
+  !               \ |
+  !                \|    z
+  !                 O---->
+  !
+  !  All components of the 4-momentum vector are changed by this call.
+  !
+  !  If parameter tables are loaded, the particle momentum is smeared according
+  !  to an asymmetric response function, if not, default gaussian sampling is used.
+  !
+  !  The default resolution mode is determined by:
+  !
+  !   mode = 1 : low-resolution     (MDC 1+2)
+  !        = 2 : medium-resolution  (MDC 1+2+3)
+  !        = 3 : high-resolution    (MDC 1+2+3+4)
+  !*****************************************************************************
   subroutine smearHades4Momentum(mom,mode,pid)
-    !
-    !  Apply the Hades momentum resolution to a 4-momentum vector (in GeV/c)
-    !
-    !  Lab frame used: z = beam axis, y = vertical axis
-    !
-    !                 ^ y
-    !            x \  |
-    !               \ |
-    !                \|    z
-    !                 O---->
-    !
-    !  All components of the 4-momentum vector are changed by this call.
-    !
-    !  If parameter tables are loaded, the particle momentum is smeared according
-    !  to an asymmetric response function, if not, default gaussian sampling is used.
-    !
-    !  The default resolution mode is determined by:
-    !
-    !   mode = 1 : low-resolution     (MDC 1+2)
-    !        = 2 : medium-resolution  (MDC 1+2+3)
-    !        = 3 : high-resolution    (MDC 1+2+3+4)
-    !
-    !
+
       real(4), intent(inout) :: mom(4)
       integer(4), intent(in) :: mode,pid
 
@@ -927,11 +929,11 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Apply Hades momentum resolution to a 3-momentum (calculate multiple
+  !  scattering assuming the particle is an electron)
+  !*****************************************************************************
   subroutine smearHades3Momentum(mom3,mode,pid)
-    !
-    !  Apply Hades momentum resolution to a 3-momentum (calculate multiple
-    !  scattering assuming the particle is an electron) 
-    !
       real(4), intent(inout) :: mom3(3)
       integer(4), intent(in) :: mode,pid
 
@@ -959,11 +961,11 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Apply Hades momentum resolution to a pair (calculate multiple
+  !  scattering assuming the particle is an electron)
+  !*****************************************************************************
   subroutine smearHadesPair(pair,mode)
-    !
-    !  Apply Hades momentum resolution to a pair (calculate multiple
-    !  scattering assuming the particle is an electron) 
-    !
       real(4), intent(inout) :: pair(3)
       integer(4), intent(in) :: mode
 
@@ -1018,13 +1020,12 @@ contains
   end subroutine smearHadesPair
 
 
-
+  !*****************************************************************************
+  !  Return random number according to a normal distribution.
+  !
+  !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
+  !*****************************************************************************
   real(4) function sampleGauss(mean,sigma)
-    !
-    !  Return random number according to a normal distribution.
-    !
-    !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
-    !
       real(4), intent(in) :: mean, sigma
 
       real(4) theta
@@ -1037,10 +1038,11 @@ contains
 
 
 
+  !*****************************************************************************
+  !     HADES momentum spread (pRec-pSim)/pSim
+  !*****************************************************************************
   real(4) function momSpread(x,respar,ns)
-    !
-    !     HADES momentum spread (pRec-pSim)/pSim
-    !
+
       real(4), intent(in) :: x, respar(10), ns
 
       real(4) pos, sig, left, right, farleft, argn, argp, argn2, e2, amp
@@ -1082,12 +1084,13 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Return random number according to the normalized HADES momentum distribution.
+  !
+  !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
+  !*****************************************************************************
   real(4) function sampleMP(respar,ns)
-    !
-    !  Return random number according to the normalized HADES momentum distribution.
-    !
-    !  Calls ran(iseed), a uniform random number generator returning ]0,1[.
-    !
+
       real(4), intent(in) :: respar(10), ns
 
       real(4) pos, sig, left, right, farleft, A(0:3), F(0:3)
@@ -1180,10 +1183,10 @@ contains
 
 
 
+  !*****************************************************************************
+  !     Set momentum resolution parameters
+  !*****************************************************************************
   subroutine setResolutionParameters(mode,a,b)
-    !
-    !     Set momentum resolution parameters
-    !
       real(4), intent(in) :: a, b
       integer(4), intent(in) :: mode
 
@@ -1199,10 +1202,10 @@ contains
 
 
 
+  !*****************************************************************************
+  !     Set angular resolution parameters
+  !*****************************************************************************
   subroutine setAngularResolutionParameters(stheta,sphi)
-    !
-    !     Set angular resolution parameters
-    !
       real(4), intent(in) :: stheta, sphi
 
       if (stheta>0. .and. sphi>0.) then
@@ -1215,11 +1218,11 @@ contains
 
 
 
+  !*****************************************************************************
+  !     Interpolate resolution parameter table as function
+  !     of momentum and theta (pin in GeV/c and theta in degree)
+  !*****************************************************************************
   real(4) function param(pin,thin,pid,itab)
-    !
-    !     Interpolate resolution parameter table as function
-    !     of momentum and theta (pin in GeV/c and theta in degree)
-    !
       real(4), intent(in) :: pin, thin
       integer(4), intent(in) :: pid, itab
 
@@ -1283,11 +1286,11 @@ contains
 
 
 
+  !*****************************************************************************
+  !  Returns acceptance value at cell (i,j) of linearized
+  !  parameter table for particle ID
+  !*****************************************************************************
   real(4) function getTableVal(i,j,pid,itab)
-    !
-    !  Returns acceptance value at cell (i,j) of linearized
-    !  parameter table for particle ID
-    !
       integer(4), intent(in) :: i, j, pid, itab
 
       integer(4) xdi, ydi, i1, j1, ilin
@@ -1322,10 +1325,10 @@ contains
 
 
 
+  !*****************************************************************************
+  !     linear interpolation in table (xtab,ytab)
+  !*****************************************************************************
   real(4) function interpol(x,xtab,ytab,n)
-    !
-    !     linear interpolation in table (xtab,ytab) 
-    !
       real(4), intent(in) :: x, xtab(*), ytab(*)
       integer(4), intent(in) :: n
 
