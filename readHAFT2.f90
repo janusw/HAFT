@@ -49,13 +49,13 @@ module HAFT
 
   !  HAFT declaration of acceptance matrix arrays and resolution tables
   !  The dimensions MUST match all array sizes in the file!
-  integer(4), parameter :: size  = 250000, &  ! <<== change if < xdim*ydim*zdim
+  integer(4), parameter :: sizem = 250000, &  ! <<== change if < xdim*ydim*zdim
                            sizep = 1000,   &  ! <<== change if < xdimp*ydimp
                            nids  = 14         ! <<== change if < max id
 
   ! acceptance matrices for e+, e-, pi+, pi-, K+, K- and p
-  real(4), dimension(size) :: matrix2, matrix3, matrix8, matrix9, &
-                              matrix10, matrix12, matrix14, matrix51
+  real(4), dimension(sizem) :: matrix2, matrix3, matrix8, matrix9, &
+                               matrix10, matrix12, matrix14, matrix51
 
   ! resolution parameter tables for e+ and e-
   real(4), dimension(6,sizep) :: par2p, par3p
@@ -103,7 +103,7 @@ contains
       real(4), intent(in) :: p0, theta0, phi0
       integer(4), intent(in), optional :: mode
 
-      real(4) p, theta, phi, u, v, w, sum, Kx, Ky, Kz
+      real(4) p, theta, phi, u, v, w, sum_, Kx, Ky, Kz
       integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi
       integer(4) xdim, ydim, zdim, mod_
       real(4) plo, pup, dp, thlo, thup, dth, phlo, phup, dph
@@ -155,7 +155,7 @@ contains
       if (ilo<0 .or. jlo<0 .or. klo<0) return
       if (ihi>xdim+1 .or. jhi>ydim+1 .or. khi>zdim+1) return
 
-      sum = 0. 
+      sum_ = 0.
       do i=ilo,ihi                      ! triple interpolation loop
         u = (p - (real(i)-0.5)*dp-plo)/dp
         Kx = kernel(u,mod_)
@@ -165,13 +165,13 @@ contains
           do k=klo,khi
             w = (phi - (real(k)-0.5)*dph-phlo)/dph
             Kz = kernel(w,mod_)
-            sum = sum + getMatrixVal(i,j,k,pid)*Kx*Ky*Kz
+            sum_ = sum_ + getMatrixVal(i,j,k,pid)*Kx*Ky*Kz
           end do
         end do
       end do
-      sum = max(min(sum, 1.01),0.)  ! clip over/undershoots
+      sum_ = max(min(sum_, 1.01),0.)  ! clip over/undershoots
 
-      getHadesAcceptance = sum
+      getHadesAcceptance = sum_
 
   end function getHadesAcceptance
 
@@ -205,9 +205,9 @@ contains
       real(4), intent(in) :: mass0, pt0, rap0
       integer(4), intent(in), optional :: mode
 
-      real(4) mass, pt, rap, u, v, w, sum, Kx, Ky, Kz
+      real(4) mass, pt, rap, u, v, w, sum_, Kx, Ky, Kz
       integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi
-      integer(4) xdim, ydim, zdim, mod
+      integer(4) xdim, ydim, zdim, mod_
       real(4) mlo, mup, dm, ptlo, ptup, dpt, raplo, rapup, drap
 
       getHadesPairAcceptance = 0.
@@ -215,9 +215,9 @@ contains
       if (readHAFTPairMatrix()==-1) return
 
       if (present(mode)) then
-        mod = mode  ! (use mode = 0 or 1, otherwise problems at pt=0!)
+        mod_ = mode  ! (use mode = 0 or 1, otherwise problems at pt=0!)
       else
-        mod = 1    ! use trilinear interpolation
+        mod_ = 1    ! use trilinear interpolation
       end if
 
       call getDimensions(51,xdim,ydim,zdim)
@@ -234,7 +234,7 @@ contains
       iy = int(ydim*((pt-0.5*dpt-ptlo)/(ptup-ptlo))) + 1
       iz = int(zdim*((rap-0.5*drap-raplo)/(rapup-raplo))) + 1
 
-      select case (mod)
+      select case (mod_)
       case (0,1)  ! set summation limits
         ilo = ix
         ihi = ix+1
@@ -256,23 +256,23 @@ contains
       if (ilo<0 .or. jlo<0 .or. klo<0) return
       if (ihi>xdim+1 .or. jhi>ydim+1 .or. khi>zdim+1) return
 
-      sum = 0. 
+      sum_ = 0. 
       do i=ilo,ihi                      ! triple interpolation loop
         u = (mass - (real(i)-0.5)*dm-mlo)/dm
-        Kx = kernel(u,mod)
+        Kx = kernel(u,mod_)
         do j=jlo,jhi
           v = (pt - (real(j)-0.5)*dpt-ptlo)/dpt
-          Ky = kernel(v,mod)
+          Ky = kernel(v,mod_)
           do k=klo,khi
             w = (rap - (real(k)-0.5)*drap-raplo)/drap
-            Kz = kernel(w,mod)
-            sum = sum + getMatrixVal(i,j,k,51)*Kx*Ky*Kz
+            Kz = kernel(w,mod_)
+            sum_ = sum_ + getMatrixVal(i,j,k,51)*Kx*Ky*Kz
           end do
         end do
       end do
-      sum = max(min(sum, 1.01),0.)  ! clip over/undershoots
+      sum_ = max(min(sum_, 1.01),0.)  ! clip over/undershoots
 
-      getHadesPairAcceptance = sum
+      getHadesPairAcceptance = sum_
 
   end function getHadesPairAcceptance
 
@@ -445,7 +445,7 @@ contains
       read(runit,pos=bytes,err=100) xdim(pid), ydim(pid), zdim(pid)
 
       bins = xdim(pid)*ydim(pid)*zdim(pid)
-      if (bins>size) goto 101  ! check if enough memory available
+      if (bins>sizem) goto 101  ! check if enough memory available
 
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) pmin(pid),pmax(pid),   &
@@ -557,7 +557,7 @@ contains
       readHAFTmatrix = -1
       return
  101  close(runit)
-      write(6,*) 'Size error: ', bins, ' >', size,' File = ',trim(fname)
+      write(6,*) 'Size error: ', bins, ' >', sizem,' File = ',trim(fname)
       readHAFTmatrix = -1
       return
  102  close(runit)
@@ -595,7 +595,7 @@ contains
       read(runit,pos=bytes,err=100) xdim2, ydim2, zdim2
 
       bins = xdim2*ydim2*zdim2
-      if (bins>size) goto 101  ! check if enough memory available
+      if (bins>sizem) goto 101  ! check if enough memory available
 
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) mmin,mmax,ptmin,ptmax,rapmin,rapmax
@@ -630,7 +630,7 @@ contains
       readHAFTPairMatrix = -1
       return
  101  close(runit)
-      write(6,*) 'Size error: ', bins,' >',size, ' File = ',trim(fname2)
+      write(6,*) 'Size error: ', bins, ' >', sizem, ' File = ',trim(fname2)
       readHAFTPairMatrix = -1
       return
   end function readHAFTPairMatrix
@@ -1190,11 +1190,10 @@ contains
       real(4), intent(in) :: pin, thin
       integer(4), intent(in) :: pid, itab
 
-      integer(4) xdi, ydi, i, j, ix, iy, ilo, ihi, jlo, jhi, mod
-      real(4) p, th, plo, pup, dp0, thlo, thup, dth0
-      real(4) sum, u, v, Kx, Ky
+      integer(4) xdi, ydi, i, j, ix, iy, ilo, ihi, jlo, jhi, mod_
+      real(4) p, th, plo, pup, dp0, thlo, thup, dth0, sum_, u, v, Kx, Ky
 
-      mod = 1
+      mod_ = 1
       param = 0.
       if (pid<1 .or. pid>nids) return
 
@@ -1217,35 +1216,36 @@ contains
       ix = int(xdi*((p-0.5*dp0-plo)/(pup-plo))) + 1      ! floor indices
       iy = int(ydi*((th-0.5*dth0-thlo)/(thup-thlo))) + 1
 
-      if (mod==0 .or. mod==1) then   ! set summation limits
+      select case (mod_)
+      case (0,1)  ! set summation limits
         ilo = ix
         ihi = ix+1
         jlo = iy
         jhi = iy+1
-      else if (abs(mod)==2 .or. abs(mod)==3 .or. abs(mod)==4) then
+      case (2,3,4,-2,-3,-4)
         ilo = ix-1
         ihi = ix+2
         jlo = iy-1
         jhi = iy+2
-      else  ! mode not defined
+      case default  ! mode not defined
         return
-      end if
+      end select
 
       if (ilo<0 .or. jlo<0) return
       if (ihi>xdi+1 .or. jhi>ydi+1) return
 
-      sum = 0. 
+      sum_ = 0.
       do i=ilo,ihi                      ! double interpolation loop
         u = (p - (real(i)-0.5)*dp0-plo)/dp0
-        Kx = kernel(u,mod)
+        Kx = kernel(u,mod_)
         do j=jlo,jhi
           v = (th - (real(j)-0.5)*dth0-thlo)/dth0
-          Ky = kernel(v,mod)
-          sum = sum + getTableVal(i,j,pid,itab)*Kx*Ky
+          Ky = kernel(v,mod_)
+          sum_ = sum_ + getTableVal(i,j,pid,itab)*Kx*Ky
         end do
       end do
 
-      param = sum
+      param = sum_
   end function param
 
 
