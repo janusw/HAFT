@@ -34,12 +34,6 @@ module HAFT
   public :: setResolutionParameters, setAngularResolutionParameters
 
 
-  !  HAFT declaration of acceptance matrix arrays and resolution tables
-  !  The dimensions MUST match all array sizes in the file!
-  integer(4), parameter :: size  = 250000, &  ! <<== change if < xdim*ydim*zdim
-                          sizep = 1000,   &  ! <<== change if < xdimp*ydimp
-                          nids  = 14         ! <<== change if < max id
-
   real(4), parameter :: pi = 3.141592654, twopi = 2.*pi, lg10 = log(10.)
 
   character(len=200), save :: fname  = 'HadesAcceptanceFilter.acc', &
@@ -48,20 +42,27 @@ module HAFT
   integer(4), save :: readflag = 0, readflag2 = 0
 
   character(len=80) :: comment, comment2
-  integer(4), dimension(nids) :: xdim, ydim, zdim, resflag, xdimp, ydimp
-  real(4), dimension(nids) :: dp, dth, dph, pmin, pmax, thmin, thmax, phmin, phmax
-  real(4), dimension(nids) :: dpp, dthp, pminp, pmaxp, thminp, thmaxp
 
-  ! matrices are declared for e+, e-, pi+, pi-, K+, K- and p
-  real(4), dimension(size) :: matrix2, matrix3, matrix8, matrix9, matrix10, &
-                             matrix12, matrix14, matrix51
-  real(4) sigpA(3), sigpB(3), sigth, sigph, XX0
+  real(4) sigpA(3), sigpB(3), sigth, sigph, XX0  ! resolution parameters
   integer(4) xdim2, ydim2, zdim2, ntab
   real(4) dm, dpt, drap, mmin, mmax, ptmin, ptmax, rapmin, rapmax
 
-  real(4), dimension(sizep) :: par2p1, par2p2, par2p3, par2p4, par2p5, par2p6
-  real(4), dimension(sizep) :: par3p1, par3p2, par3p3, par3p4, par3p5, par3p6
+  !  HAFT declaration of acceptance matrix arrays and resolution tables
+  !  The dimensions MUST match all array sizes in the file!
+  integer(4), parameter :: size  = 250000, &  ! <<== change if < xdim*ydim*zdim
+                           sizep = 1000,   &  ! <<== change if < xdimp*ydimp
+                           nids  = 14         ! <<== change if < max id
 
+  ! acceptance matrices for e+, e-, pi+, pi-, K+, K- and p
+  real(4), dimension(size) :: matrix2, matrix3, matrix8, matrix9, &
+                              matrix10, matrix12, matrix14, matrix51
+
+  ! resolution parameter tables for e+ and e-
+  real(4), dimension(6,sizep) :: par2p, par3p
+
+  integer(4), dimension(nids) :: xdim, ydim, zdim, resflag, xdimp, ydimp
+  real(4), dimension(nids) :: dp, dth, dph, pmin, pmax, thmin, thmax, phmin, phmax
+  real(4), dimension(nids) :: dpp, dthp, pminp, pmaxp, thminp, thmaxp
 
 contains
 
@@ -430,8 +431,7 @@ contains
       write(6,'(a80)') comment
       write(6,*) '--------------------------------------'
       bytes = bytes + 80
-      read(runit,pos=bytes,err=100) sigpA(1), sigpA(2), sigpA(3), &
-                                    sigpB(1), sigpB(2), sigpB(3), &
+      read(runit,pos=bytes,err=100) sigpA(1:3), sigpB(1:3), &
                                     sigth, sigph, XX0
       bytes = bytes + 9*4
 
@@ -453,25 +453,25 @@ contains
                                     phmin(pid),phmax(pid)
       bytes = bytes + 6*4
       if (pid==2) then        ! positron
-        read(runit,pos=bytes,err=100) (matrix2(i),i=1,bins)
+        read(runit,pos=bytes,err=100) matrix2(1:bins)
         write(6,'(''Matrix read for e+'')')
       else if (pid==3) then     ! electron
-        read(runit,pos=bytes,err=100) (matrix3(i),i=1,bins)
+        read(runit,pos=bytes,err=100) matrix3(1:bins)
         write(6,'(''Matrix read for e-'')')
       else if (pid==8) then     ! pi+
-        read(runit,pos=bytes,err=100) (matrix8(i),i=1,bins)
+        read(runit,pos=bytes,err=100) matrix8(1:bins)
         write(6,'(''Matrix read for pi+'')')
       else if (pid==9) then     ! pi-
-        read(runit,pos=bytes,err=100) (matrix9(i),i=1,bins)
+        read(runit,pos=bytes,err=100) matrix9(1:bins)
         write(6,'(''Matrix read for pi-'')')
       else if (pid==10) then    ! K+
-        read(runit,pos=bytes,err=100) (matrix10(i),i=1,bins)
+        read(runit,pos=bytes,err=100) matrix10(1:bins)
         write(6,'(''Matrix read for K+'')')
       else if (pid==12) then    ! K-
-        read(runit,pos=bytes,err=100) (matrix12(i),i=1,bins)
+        read(runit,pos=bytes,err=100) matrix12(1:bins)
         write(6,'(''Matrix read for K-'')')
       else if (pid==14) then    ! proton
-        read(runit,pos=bytes,err=100) (matrix14(i),i=1,bins)
+        read(runit,pos=bytes,err=100) matrix14(1:bins)
         write(6,'(''Matrix read for p'')')
       else
         write(6,'(''Unsupported particle ID: '',I3,''  STOP!'')')
@@ -510,52 +510,16 @@ contains
       read(runit,pos=bytes,err=100) ntab ! nb. of parameter tables
       bytes = bytes + 4
       if (pid==2) then          ! positron
-        read(runit,pos=bytes,err=100) (par2p1(i),i=1,bins)
-        bytes = bytes + bins*4
-        if (ntab>1) then
-          read(runit,pos=bytes,err=100) (par2p2(i),i=1,bins)
+        do i=1,ntab
+          read(runit,pos=bytes,err=100) par2p(i,1:bins)
           bytes = bytes + bins*4
-        end if
-        if (ntab>2) then
-          read(runit,pos=bytes,err=100) (par2p3(i),i=1,bins)
-          bytes = bytes + bins*4
-        end if
-        if (ntab>3) then
-          read(runit,pos=bytes,err=100) (par2p4(i),i=1,bins)
-          bytes = bytes + bins*4
-        end if
-        if (ntab>4) then
-          read(runit,pos=bytes,err=100) (par2p5(i),i=1,bins)
-          bytes = bytes + bins*4
-        end if
-        if (ntab>5) then
-          read(runit,pos=bytes,err=100) (par2p6(i),i=1,bins)
-          bytes = bytes + bins*4
-        end if
+        end do
         write(6,'(''Resolution tables read for e+'')')
       else if (pid==3) then     ! electron
-        read(runit,pos=bytes,err=100) (par3p1(i),i=1,bins)
-        bytes = bytes + bins*4
-        if (ntab>1) then
-          read(runit,pos=bytes,err=100) (par3p2(i),i=1,bins)
+        do i=1,ntab
+          read(runit,pos=bytes,err=100) par3p(i,1:bins)
           bytes = bytes + bins*4
-        end if
-        if (ntab>2) then
-          read(runit,pos=bytes,err=100) (par3p3(i),i=1,bins)
-          bytes = bytes + bins*4
-        end if
-        if (ntab>3) then
-          read(runit,pos=bytes,err=100) (par3p4(i),i=1,bins)
-          bytes = bytes + bins*4
-        end if
-        if (ntab>4) then
-          read(runit,pos=bytes,err=100) (par3p5(i),i=1,bins)
-          bytes = bytes + bins*4
-        end if
-        if (ntab>5) then
-          read(runit,pos=bytes,err=100) (par3p6(i),i=1,bins)
-          bytes = bytes + bins*4
-        end if
+        end do
         write(6,'(''Resolution tables read for e-'')')
       else
         write(6,'(''Unsupported PID: '',I3,'' Use default smearing!'')')
@@ -612,7 +576,7 @@ contains
 
       integer(4), parameter :: runit = 78  ! change if input unit is already busy
 
-      integer(4) i, bins
+      integer(4) bins
       integer(4) bytes       ! byte counter
 
       readHAFTPairMatrix = 0
@@ -636,7 +600,7 @@ contains
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) mmin,mmax,ptmin,ptmax,rapmin,rapmax
       bytes = bytes + 6*4
-      read(runit,pos=bytes,err=100) (matrix51(i),i=1,bins)
+      read(runit,pos=bytes,err=100) matrix51(1:bins)
       write(6,'(''Matrix read for e+e- pairs'')')
       bytes = bytes + bins*4
       close(runit)
@@ -1307,19 +1271,9 @@ contains
       ilin = i1+xdi*(j1-1)    ! linearized index
 
       if (pid==2) then          ! positron
-        if (itab==1) getTableVal = par2p1(ilin)
-        if (itab==2) getTableVal = par2p2(ilin)
-        if (itab==3) getTableVal = par2p3(ilin)
-        if (itab==4) getTableVal = par2p4(ilin)
-        if (itab==5) getTableVal = par2p5(ilin)
-        if (itab==6) getTableVal = par2p6(ilin)
+        getTableVal = par2p(itab,ilin)
       else if (pid==3) then     ! electron
-        if (itab==1) getTableVal = par3p1(ilin)
-        if (itab==2) getTableVal = par3p2(ilin)
-        if (itab==3) getTableVal = par3p3(ilin)
-        if (itab==4) getTableVal = par3p4(ilin)
-        if (itab==5) getTableVal = par3p5(ilin)
-        if (itab==6) getTableVal = par3p6(ilin)
+        getTableVal = par3p(itab,ilin)
       end if
   end function getTableVal
 
