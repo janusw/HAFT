@@ -585,35 +585,19 @@ contains
 
 
   !*****************************************************************************
-  !  Return the dimensions of a table of particle pid
-  !*****************************************************************************
-  subroutine getDimensions(pid,nx,ny,nz)
-      integer(4), intent(in)  :: pid
-      integer(4), intent(out) :: nx, ny, nz
-
-      nx = xdim(pid)
-      ny = ydim(pid)
-      nz = zdim(pid)
-
-  end subroutine getDimensions
-
-
-  !*****************************************************************************
   !  Returns acceptance value at cell (i,j,k) of linearized matrix
   !  for particle ID
   !*****************************************************************************
   real(4) function getMatrixVal(i,j,k,pid)
       integer(4), intent(in) :: i, j, k, pid
 
-      integer(4) xdi, ydi, zdi, i1, j1, k1, ilin
+      integer(4) i1, j1, k1, ilin
 
-      call getDimensions(pid,xdi,ydi,zdi)
+      i1 = min(max(1,i),xdim(pid))  ! Make sure indexes stay within table.
+      j1 = min(max(1,j),ydim(pid))  ! This effectively extrapolates matrix
+      k1 = min(max(1,k),zdim(pid))  ! beyond table boundaries.
 
-      i1 = min(max(1,i),xdi)  ! Make sure indexes stay within table.
-      j1 = min(max(1,j),ydi)  ! This effectively extrapolates matrix
-      k1 = min(max(1,k),zdi)  ! beyond table boundaries.
-
-      ilin = i1+xdi*(j1-1)+xdi*ydi*(k1-1)  ! linearized index
+      ilin = i1+xdim(pid)*(j1-1)+xdim(pid)*ydim(pid)*(k1-1)  ! linearized index
       select case (pid)
       case (2)     ! positron
         getMatrixVal = matrix2(ilin)
@@ -633,25 +617,6 @@ contains
         getMatrixVal = 0.
       end select
   end function getMatrixVal
-
-
-  !*****************************************************************************
-  !  Return the lower and upper limits, and step sizes of the table
-  !*****************************************************************************
-  subroutine getLimits(pid,xlo,xhi,dx,ylo,yhi,dy,zlo,zhi,dz) 
-      integer(4), intent(in) :: pid
-      real(4), intent(out) :: xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
-
-      xlo  = pmin(pid)
-      xhi  = pmax(pid)
-      dx   = dp(pid)
-      ylo = thmin(pid)
-      yhi = thmax(pid)
-      dy  = dth(pid)
-      zlo = phmin(pid)
-      zhi = phmax(pid)
-      dz = dph(pid)
-  end subroutine getLimits
 
 
   !*****************************************************************************
@@ -692,9 +657,7 @@ contains
       integer(4), intent(in), optional :: mode
 
       real(4) p, theta, phi, u, v, w, sum_, Kx, Ky, Kz
-      integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi
-      integer(4) xdim, ydim, zdim, mod_
-      real(4) plo, pup, dp, thlo, thup, dth, phlo, phup, dph
+      integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi, mod_
 
       if (present(mode)) then
         mod_ = mode
@@ -706,20 +669,17 @@ contains
 
       if (readHAFTmatrix()==-1) return
 
-      call getDimensions(pid,xdim,ydim,zdim)
-      call getLimits(pid,plo,pup,dp,thlo,thup,dth,phlo,phup,dph) 
+      if (p0<pmin(pid) .or. theta0<thmin(pid) .or. theta0>thmax(pid) .or. &
+          phi0<phmin(pid)) return
 
-      if (p0<plo .or. theta0<thlo .or. theta0>thup) return
-      if (phi0<phlo) return
-
-      p = min(p0,pup-2.01*dp)  ! level off acceptance at high p
+      p = min(p0,pmax(pid)-2.01*dp(pid))  ! level off acceptance at high p
       theta = theta0
       phi = phi0
       if (phi > 60.) phi = mod(phi,60._4)   ! modulo HADES sector
 
-      ix = int(xdim*((p-0.5*dp-plo)/(pup-plo))) + 1      ! floor indices
-      iy = int(ydim*((theta-0.5*dth-thlo)/(thup-thlo))) + 1
-      iz = int(zdim*((phi-0.5*dph-phlo)/(phup-phlo))) + 1
+      ix = int(xdim(pid)*((p-0.5*dp(pid)-pmin(pid))/(pmax(pid)-pmin(pid)))) + 1  ! floor indices
+      iy = int(ydim(pid)*((theta-0.5*dth(pid)-thmin(pid))/(thmax(pid)-thmin(pid)))) + 1
+      iz = int(zdim(pid)*((phi-0.5*dph(pid)-phmin(pid))/(phmax(pid)-phmin(pid)))) + 1
 
       select case (mod_)
       case (0,1)  ! set summation limits
@@ -741,17 +701,17 @@ contains
       end select
 
       if (ilo<0 .or. jlo<0 .or. klo<0) return
-      if (ihi>xdim+1 .or. jhi>ydim+1 .or. khi>zdim+1) return
+      if (ihi>xdim(pid)+1 .or. jhi>ydim(pid)+1 .or. khi>zdim(pid)+1) return
 
       sum_ = 0.
       do i=ilo,ihi                      ! triple interpolation loop
-        u = (p - (real(i)-0.5)*dp-plo)/dp
+        u = (p - (real(i)-0.5)*dp(pid)-pmin(pid))/dp(pid)
         Kx = kernel(u,mod_)
         do j=jlo,jhi
-          v = (theta - (real(j)-0.5)*dth-thlo)/dth
+          v = (theta - (real(j)-0.5)*dth(pid)-thmin(pid))/dth(pid)
           Ky = kernel(v,mod_)
           do k=klo,khi
-            w = (phi - (real(k)-0.5)*dph-phlo)/dph
+            w = (phi - (real(k)-0.5)*dph(pid)-phmin(pid))/dph(pid)
             Kz = kernel(w,mod_)
             sum_ = sum_ + getMatrixVal(i,j,k,pid)*Kx*Ky*Kz
           end do
@@ -1049,7 +1009,7 @@ module HAFT_pair
   public :: setResolutionParameters, setAngularResolutionParameters
   public :: smearHadesPair
 
-  character(len=200), save :: fname2 = 'HadesPairAcceptanceFilter.acc'
+  character(len=200), save :: fname = 'HadesPairAcceptanceFilter.acc'
 
   !  HAFT declaration of acceptance matrix arrays
   !  The dimensions MUST match all array sizes in the file!
@@ -1058,8 +1018,8 @@ module HAFT_pair
   ! pair acceptance matrix
   real(4), dimension(sizem) :: matrix51
 
-  character(len=80) :: comment2
-  integer(4) :: xdim2, ydim2, zdim2, readflag2 = 0
+  character(len=80) :: comment
+  integer(4) :: xdim, ydim, zdim, readflag2 = 0
   real(4) sigpA(3), sigpB(3), sigth, sigph  ! resolution parameters
   real(4) dm, dpt, drap, mmin, mmax, ptmin, ptmax, rapmin, rapmax
 
@@ -1095,9 +1055,7 @@ contains
       integer(4), intent(in), optional :: mode
 
       real(4) mass, pt, rap, u, v, w, sum_, Kx, Ky, Kz
-      integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi
-      integer(4) xdim, ydim, zdim, mod_
-      real(4) mlo, mup, dm, ptlo, ptup, dpt, raplo, rapup, drap
+      integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi, mod_
 
       getHadesPairAcceptance = 0.
 
@@ -1109,19 +1067,16 @@ contains
         mod_ = 1    ! use trilinear interpolation
       end if
 
-      call getDimensions(xdim,ydim,zdim)
-      call getLimits(mlo,mup,dm,ptlo,ptup,dpt,raplo,rapup,drap) 
-
-      if (mass0<mlo .or. pt0<ptlo .or. pt0>ptup .or. rap0<raplo .or. rap0>rapup) &
+      if (mass0<mmin .or. pt0<ptmin .or. pt0>ptmax .or. rap0<rapmin .or. rap0>rapmax) &
         return
 
-      mass = min(mass0,mup-2.01*dm)  ! level off acceptance at high mass
+      mass = min(mass0,mmax-2.01*dm)  ! level off acceptance at high mass
       pt = pt0
       rap = rap0
 
-      ix = int(xdim*((mass-0.5*dm-mlo)/(mup-mlo))) + 1      ! floor indices
-      iy = int(ydim*((pt-0.5*dpt-ptlo)/(ptup-ptlo))) + 1
-      iz = int(zdim*((rap-0.5*drap-raplo)/(rapup-raplo))) + 1
+      ix = int(xdim*((mass-0.5*dm-mmin)/(mmax-mmin))) + 1      ! floor indices
+      iy = int(ydim*((pt-0.5*dpt-ptmin)/(ptmax-ptmin))) + 1
+      iz = int(zdim*((rap-0.5*drap-rapmin)/(rapmax-rapmin))) + 1
 
       select case (mod_)
       case (0,1)  ! set summation limits
@@ -1147,13 +1102,13 @@ contains
 
       sum_ = 0. 
       do i=ilo,ihi                      ! triple interpolation loop
-        u = (mass - (real(i)-0.5)*dm-mlo)/dm
+        u = (mass - (real(i)-0.5)*dm-mmin)/dm
         Kx = kernel(u,mod_)
         do j=jlo,jhi
-          v = (pt - (real(j)-0.5)*dpt-ptlo)/dpt
+          v = (pt - (real(j)-0.5)*dpt-ptmin)/dpt
           Ky = kernel(v,mod_)
           do k=klo,khi
-            w = (rap - (real(k)-0.5)*drap-raplo)/drap
+            w = (rap - (real(k)-0.5)*drap-rapmin)/drap
             Kz = kernel(w,mod_)
             sum_ = sum_ + getMatrixVal(i,j,k)*Kx*Ky*Kz
           end do
@@ -1185,14 +1140,14 @@ contains
       ! set matrix to 0
       matrix51(:) = 0.
 
-      open(unit=runit,file=fname2,access='stream',status='old',err=99)
+      open(unit=runit,file=fname,access='stream',status='old',err=99)
       bytes=1
-      read(runit,pos=bytes,err=100) comment2
-      write(6,'(a80)') comment2
+      read(runit,pos=bytes,err=100) comment
+      write(6,'(a80)') comment
       bytes = bytes + 80
-      read(runit,pos=bytes,err=100) xdim2, ydim2, zdim2
+      read(runit,pos=bytes,err=100) xdim, ydim, zdim
 
-      bins = xdim2*ydim2*zdim2
+      bins = xdim*ydim*zdim
       if (bins>sizem) goto 101  ! check if enough memory available
 
       bytes = bytes + 3*4
@@ -1203,12 +1158,12 @@ contains
       bytes = bytes + bins*4
       close(runit)
 
-      dm = (mmax-mmin)/real(xdim2)
-      dpt = (ptmax-ptmin)/real(ydim2)
-      drap = (rapmax-rapmin)/real(zdim2)
+      dm = (mmax-mmin)/real(xdim)
+      dpt = (ptmax-ptmin)/real(ydim)
+      drap = (rapmax-rapmin)/real(zdim)
 
-      write(6,'('' coms= '',a80)') comment2
-      write(6,*) 'dims= ',xdim2, ' ', ydim2, ' ', zdim2
+      write(6,'('' coms= '',a80)') comment
+      write(6,*) 'dims= ',xdim, ' ', ydim, ' ', zdim
       write(6,*) 'lims= ',mmin, ' ', mmax, ' ', ptmin, ' ', ptmax, &
                  ' ', rapmin, ' ', rapmax
       write(6,*) 'size of matrix :', bins
@@ -1218,17 +1173,16 @@ contains
       return
 
       ! Error opening or reading
-
  99   close(runit)
-      write(6,*) 'Open error on unit ', runit, ' File = ',trim(fname2)
+      write(6,*) 'Open error on unit ', runit, ' File = ',trim(fname)
       readHAFTPairMatrix = -1
       return
  100  close(runit)
-      write(6,*) 'Read error on unit ', runit, ' File = ',trim(fname2)
+      write(6,*) 'Read error on unit ', runit, ' File = ',trim(fname)
       readHAFTPairMatrix = -1
       return
  101  close(runit)
-      write(6,*) 'Size error: ', bins, ' >', sizem, ' File = ',trim(fname2)
+      write(6,*) 'Size error: ', bins, ' >', sizem, ' File = ',trim(fname)
       readHAFTPairMatrix = -1
       return
   end function readHAFTPairMatrix
@@ -1242,11 +1196,11 @@ contains
 
       integer(4) dummy
 
-      fname2 = name
+      fname = name
       dummy = readHAFTPairMatrix()
 
 !      write(6,'(''name  |'',a80,''|'')') name
-!      write(6,'(''fname2 |'',a80,''|'')') fname2
+!      write(6,'(''fname |'',a80,''|'')') fname
   end subroutine setPairFileName
 
 
@@ -1257,49 +1211,17 @@ contains
   real(4) function getMatrixVal(i,j,k)
       integer(4), intent(in) :: i, j, k
 
-      integer(4) xdi, ydi, zdi, i1, j1, k1, ilin
+      integer(4) i1, j1, k1, ilin
 
-      call getDimensions(xdi,ydi,zdi)
+      i1 = min(max(1,i),xdim)  ! Make sure indexes stay within table.
+      j1 = min(max(1,j),ydim)  ! This effectively extrapolates matrix
+      k1 = min(max(1,k),zdim)  ! beyond table boundaries.
 
-      i1 = min(max(1,i),xdi)  ! Make sure indexes stay within table.
-      j1 = min(max(1,j),ydi)  ! This effectively extrapolates matrix
-      k1 = min(max(1,k),zdi)  ! beyond table boundaries.
-
-      ilin = i1+xdi*(j1-1)+xdi*ydi*(k1-1)  ! linearized index
+      ilin = i1+xdim*(j1-1)+xdim*ydim*(k1-1)  ! linearized index
 
       getMatrixVal = matrix51(ilin)
 
   end function getMatrixVal
-
-
-  !*****************************************************************************
-  !  Return the lower and upper limits, and step sizes of the table
-  !*****************************************************************************
-  subroutine getLimits(xlo,xhi,dx,ylo,yhi,dy,zlo,zhi,dz)
-      real(4), intent(out) :: xlo, xhi, dx, ylo, yhi, dy, zlo, zhi, dz
-
-      xlo  = mmin
-      xhi  = mmax
-      dx   = dm
-      ylo = ptmin
-      yhi = ptmax
-      dy  = dpt
-      zlo = rapmin
-      zhi = rapmax
-      dz = drap
-  end subroutine getLimits
-
-
-  !*****************************************************************************
-  !  Return the dimensions of a table of particle pid
-  !*****************************************************************************
-  subroutine getDimensions(nx,ny,nz)
-      integer(4), intent(out) :: nx, ny, nz
-
-      nx = xdim2
-      ny = ydim2
-      nz = zdim2
-  end subroutine getDimensions
 
 
   !*****************************************************************************
