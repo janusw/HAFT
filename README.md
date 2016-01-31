@@ -7,7 +7,8 @@ In contrast to the original code, the reading of the acceptance matrices is done
 
 There are two modules, 'HAFT_single' and 'HAFT_pair'.
 
-The module 'HAFT_single' provides routines for single-particle acceptance filtering. Usage :
+The module 'HAFT_single' provides routines for single-particle acceptance filtering. Usage:
+
 1. set acceptance file name with
         `call setFileName(fname)`
 2. sample single acceptance values with calls to
@@ -15,7 +16,8 @@ The module 'HAFT_single' provides routines for single-particle acceptance filter
 3. apply detector resolution with calls to
         `call smearhadesmomentum(...)`
 
-The module 'HAFT_pair' provides routines for pair acceptance filtering. Usage :
+The module 'HAFT_pair' provides routines for pair acceptance filtering. Usage:
+
 1. set acceptance file name with
         `call setPairFileName(fname)`
 2. sample pair acceptance values with calls to
