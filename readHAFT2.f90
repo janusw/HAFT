@@ -369,19 +369,31 @@ module HAFT_single
   !  HAFT declaration of acceptance matrix arrays and resolution tables
   integer(4), parameter :: nids  = 14         ! <<== change if < max id
 
+  type :: AcceptanceMatrix
+    real(4), dimension(:), allocatable :: matrix     ! the actual matrix
+    integer(4) :: xdim = 0, ydim = 0, zdim = 0       ! dimensions
+    real(4) :: pmin = 0., thmin = 0., phmin = 0., &  ! limits
+               pmax = 0., thmax = 0., phmax = 0.
+    real(4) :: dp = 0., dth = 0., dph = 0.           ! step sizes
+  end type
+
   ! acceptance matrices for e+, e-, pi+, pi-, K+, K- and p
-  real(4), dimension(:), allocatable :: matrix2, matrix3, matrix8, matrix9, &
-                                        matrix10, matrix12, matrix14
+  type(AcceptanceMatrix), dimension(nids), save :: acc
+
+  type :: ResParameterTable
+    real(4), dimension(:,:), allocatable :: tab  ! the actual table
+    integer(4) :: xdim, ydim                     ! dimensions
+    real(4) :: pmin, pmax, thmin, thmax          ! limits
+    real(4) :: dp, dth                           ! step sizes
+    logical :: resflag = .false.                 ! parameters loaded?
+  end type
 
   ! resolution parameter tables for e+ and e-
-  real(4), dimension(:,:), allocatable :: par2p, par3p
+  type(ResParameterTable), dimension(nids), save :: par
 
-  integer(4), dimension(nids) :: xdim, ydim, zdim, resflag, xdimp, ydimp
-  real(4), dimension(nids) :: dp, dth, dph, pmin, pmax, thmin, thmax, phmin, phmax
-  real(4), dimension(nids) :: dpp, dthp, pminp, pmaxp, thminp, thmaxp
-
+  logical :: readflag = .false.
   character(len=80) :: comment
-  integer(4) :: ntab, readflag = 0
+  integer(4) :: ntab
   real(4) sigpA(3), sigpB(3), sigth, sigph, XX0  ! resolution parameters
 
 contains
@@ -415,22 +427,9 @@ contains
 
       readHAFTmatrix = 0
 
-      if (readflag==1) return
+      if (readflag) return
 
-      readflag = 0
-
-      xdim(:) = 0
-      ydim(:) = 0
-      zdim(:) = 0
-      pmin(:) = 0.
-      pmax(:) = 0.
-      dp(:) = 0.
-      thmin(:) = 0.
-      thmax(:) = 0.
-      dth(:) = 0.
-      phmin(:) = 0.
-      phmax(:) = 0.
-      dph(:) = 0.
+      readflag = .false.
 
       open(unit=runit,file=fname,access='stream',status='old',err=99)
       bytes=1
@@ -450,59 +449,34 @@ contains
       ! read acceptance matrix
 
       bytes = bytes + 4
-      read(runit,pos=bytes,err=100) xdim(pid), ydim(pid), zdim(pid)
+      read(runit,pos=bytes,err=100) acc(pid)%xdim, acc(pid)%ydim, acc(pid)%zdim
 
-      bins = xdim(pid)*ydim(pid)*zdim(pid)
+      bins = acc(pid)%xdim * acc(pid)%ydim * acc(pid)%zdim
 
       bytes = bytes + 3*4
-      read(runit,pos=bytes,err=100) pmin(pid),pmax(pid),   &
-                                    thmin(pid),thmax(pid), &
-                                    phmin(pid),phmax(pid)
+      read(runit,pos=bytes,err=100) acc(pid)%pmin, acc(pid)%pmax,   &
+                                    acc(pid)%thmin, acc(pid)%thmax, &
+                                    acc(pid)%phmin, acc(pid)%phmax
       bytes = bytes + 6*4
-      if (pid==2) then        ! positron
-        allocate(matrix2(bins), source=0._4)
-        read(runit,pos=bytes,err=100) matrix2(1:bins)
-        write(6,'(''Matrix read for e+'')')
-      else if (pid==3) then     ! electron
-        allocate(matrix3(bins), source=0._4)
-        read(runit,pos=bytes,err=100) matrix3(1:bins)
-        write(6,'(''Matrix read for e-'')')
-      else if (pid==8) then     ! pi+
-        allocate(matrix8(bins), source=0._4)
-        read(runit,pos=bytes,err=100) matrix8(1:bins)
-        write(6,'(''Matrix read for pi+'')')
-      else if (pid==9) then     ! pi-
-        allocate(matrix9(bins), source=0._4)
-        read(runit,pos=bytes,err=100) matrix9(1:bins)
-        write(6,'(''Matrix read for pi-'')')
-      else if (pid==10) then    ! K+
-        allocate(matrix10(bins), source=0._4)
-        read(runit,pos=bytes,err=100) matrix10(1:bins)
-        write(6,'(''Matrix read for K+'')')
-      else if (pid==12) then    ! K-
-        allocate(matrix12(bins), source=0._4)
-        read(runit,pos=bytes,err=100) matrix12(1:bins)
-        write(6,'(''Matrix read for K-'')')
-      else if (pid==14) then    ! proton
-        allocate(matrix14(bins), source=0._4)
-        read(runit,pos=bytes,err=100) matrix14(1:bins)
-        write(6,'(''Matrix read for p'')')
+      if (pid<nids) then
+        allocate(acc(pid)%matrix(bins), source=0._4)
+        read(runit,pos=bytes,err=100) acc(pid)%matrix(1:bins)
+        write(6,'(''Matrix read for pid '',I3)') pid
       else
         write(6,'(''Unsupported particle ID: '',I3,''  STOP!'')')
         stop
       end if
-      resflag(pid) = 0
       bytes = bytes + bins*4
 
 !     write(6,*) 'Acceptance matrix for ID= ',pid
-      write(6,*) 'dims= ',xdim(pid), ' ', ydim(pid), ' ', zdim(pid)
-      write(6,*) 'lims= ',pmin(pid), ' ', pmax(pid), ' ', thmin(pid), &
-                 ' ', thmax(pid), ' ', phmin(pid), ' ', phmax(pid)
+      write(6,*) 'dims= ',acc(pid)%xdim, ' ', acc(pid)%ydim, ' ', acc(pid)%zdim
+      write(6,*) 'lims= ',acc(pid)%pmin, ' ', acc(pid)%pmax, ' ', acc(pid)%thmin, &
+                 ' ', acc(pid)%thmax, ' ', acc(pid)%phmin, ' ', acc(pid)%phmax
       write(6,*) 'size of matrix :', bins
       write(6,*) '--------------------------------------'
-      dp(pid) = (pmax(pid)-pmin(pid))/real(xdim(pid))
-      dth(pid) = (thmax(pid)-thmin(pid))/real(ydim(pid))
-      dph(pid) = (phmax(pid)-phmin(pid))/real(zdim(pid))
+      acc(pid)%dp = (acc(pid)%pmax-acc(pid)%pmin)/real(acc(pid)%xdim)
+      acc(pid)%dth = (acc(pid)%thmax-acc(pid)%thmin)/real(acc(pid)%ydim)
+      acc(pid)%dph = (acc(pid)%phmax-acc(pid)%phmin)/real(acc(pid)%zdim)
 
       goto 40  ! loop until EOF is reached
 
@@ -512,52 +486,45 @@ contains
       if (pid<2 .or. pid>3) goto 102
 
       bytes = bytes + 4
-      read(runit,pos=bytes,err=100) xdimp(pid), ydimp(pid)
+      read(runit,pos=bytes,err=100) par(pid)%xdim, par(pid)%ydim
 
-      bins = xdimp(pid)*ydimp(pid)
+      bins = par(pid)%xdim*par(pid)%ydim
 
       bytes = bytes + 2*4
-      read(runit,pos=bytes,err=100) pminp(pid),pmaxp(pid), &
-                                    thminp(pid),thmaxp(pid)
+      read(runit,pos=bytes,err=100) par(pid)%pmin, par(pid)%pmax, &
+                                    par(pid)%thmin, par(pid)%thmax
       bytes = bytes + 4*4
       read(runit,pos=bytes,err=100) ntab ! nb. of parameter tables
       bytes = bytes + 4
-      if (pid==2) then          ! positron
-        allocate(par2p(ntab,bins), source=0._4)
+      if (pid<nids) then
+        allocate(par(pid)%tab(ntab,bins), source=0._4)
         do i=1,ntab
-          read(runit,pos=bytes,err=100) par2p(i,1:bins)
+          read(runit,pos=bytes,err=100) par(pid)%tab(i,1:bins)
           bytes = bytes + bins*4
         end do
-        write(6,'(''Resolution tables read for e+'')')
-      else if (pid==3) then     ! electron
-        allocate(par3p(ntab,bins), source=0._4)
-        do i=1,ntab
-          read(runit,pos=bytes,err=100) par3p(i,1:bins)
-          bytes = bytes + bins*4
-        end do
-        write(6,'(''Resolution tables read for e-'')')
+        write(6,'(''Resolution tables read for pid'',I3)') pid
+        par(pid)%resflag = .true.
       else
         write(6,'(''Unsupported PID: '',I3,'' Use default smearing!'')')
-        resflag(pid) = 0
+        par(pid)%resflag = .false.
         goto 40
       end if
-      resflag(pid) = 1
 
 !     write(6,*) 'Parameter tables for ID= ',pid
-      write(6,*) 'dims= ',xdimp(pid), ' ', ydimp(pid)
-      write(6,*) 'lims= ',pminp(pid), ' ', pmaxp(pid), ' ', thminp(pid), &
-                 ' ', thmaxp(pid)
+      write(6,*) 'dims= ',par(pid)%xdim, ' ', par(pid)%ydim
+      write(6,*) 'lims= ',par(pid)%pmin, ' ', par(pid)%pmax, ' ', &
+                          par(pid)%thmin, ' ', par(pid)%thmax
       write(6,*) 'size of parameter tables :', ntab, ' x', bins
       write(6,*) '--------------------------------------'
-      dpp(pid) = (pmaxp(pid)-pminp(pid))/real(xdimp(pid))
-      dthp(pid) = (thmaxp(pid)-thminp(pid))/real(ydimp(pid))
+      par(pid)%dp  = (par(pid)%pmax-par(pid)%pmin)   / real(par(pid)%xdim)
+      par(pid)%dth = (par(pid)%thmax-par(pid)%thmin) / real(par(pid)%ydim)
 
       goto 40  ! loop until EOF is reached
 
  50   close(runit)
 
       readHAFTmatrix = bytes-1 ! return number of bytes read
-      readflag = 1
+      readflag = .true.
       return
 
       ! Error opening or reading
@@ -580,34 +547,18 @@ contains
   !  Returns acceptance value at cell (i,j,k) of linearized matrix
   !  for particle ID
   !*****************************************************************************
-  real(4) function getMatrixVal(i,j,k,pid)
-      integer(4), intent(in) :: i, j, k, pid
+  real(4) function getMatrixVal(acc,i,j,k)
+      type(AcceptanceMatrix), intent(in) :: acc
+      integer(4), intent(in) :: i, j, k
 
       integer(4) i1, j1, k1, ilin
 
-      i1 = min(max(1,i),xdim(pid))  ! Make sure indexes stay within table.
-      j1 = min(max(1,j),ydim(pid))  ! This effectively extrapolates matrix
-      k1 = min(max(1,k),zdim(pid))  ! beyond table boundaries.
+      i1 = min(max(1,i),acc%xdim)  ! Make sure indexes stay within table.
+      j1 = min(max(1,j),acc%ydim)  ! This effectively extrapolates matrix
+      k1 = min(max(1,k),acc%zdim)  ! beyond table boundaries.
 
-      ilin = i1+xdim(pid)*(j1-1)+xdim(pid)*ydim(pid)*(k1-1)  ! linearized index
-      select case (pid)
-      case (2)     ! positron
-        getMatrixVal = matrix2(ilin)
-      case (3)     ! electron
-        getMatrixVal = matrix3(ilin)
-      case (8)     ! pi+
-        getMatrixVal = matrix8(ilin)
-      case (9)     ! pi-
-        getMatrixVal = matrix9(ilin)
-      case (10)    ! K+
-        getMatrixVal = matrix10(ilin)
-      case (12)    ! K-
-        getMatrixVal = matrix12(ilin)
-      case (14)    ! proton
-        getMatrixVal = matrix14(ilin)
-      case default
-        getMatrixVal = 0.
-      end select
+      ilin = i1+acc%xdim*(j1-1)+acc%xdim*acc%ydim*(k1-1)  ! linearized index
+      getMatrixVal = acc%matrix(ilin)
   end function getMatrixVal
 
 
@@ -661,17 +612,17 @@ contains
 
       if (readHAFTmatrix()==-1) return
 
-      if (p0<pmin(pid) .or. theta0<thmin(pid) .or. theta0>thmax(pid) .or. &
-          phi0<phmin(pid)) return
+      if (p0<acc(pid)%pmin .or. theta0<acc(pid)%thmin .or. theta0>acc(pid)%thmax .or. &
+          phi0<acc(pid)%phmin) return
 
-      p = min(p0,pmax(pid)-2.01*dp(pid))  ! level off acceptance at high p
+      p = min(p0,acc(pid)%pmax-2.01*acc(pid)%dp)  ! level off acceptance at high p
       theta = theta0
       phi = phi0
       if (phi > 60.) phi = mod(phi,60._4)   ! modulo HADES sector
 
-      ix = int(xdim(pid)*((p-0.5*dp(pid)-pmin(pid))/(pmax(pid)-pmin(pid)))) + 1  ! floor indices
-      iy = int(ydim(pid)*((theta-0.5*dth(pid)-thmin(pid))/(thmax(pid)-thmin(pid)))) + 1
-      iz = int(zdim(pid)*((phi-0.5*dph(pid)-phmin(pid))/(phmax(pid)-phmin(pid)))) + 1
+      ix = int(acc(pid)%xdim*((p-0.5*acc(pid)%dp-acc(pid)%pmin)/(acc(pid)%pmax-acc(pid)%pmin))) + 1  ! floor indices
+      iy = int(acc(pid)%ydim*((theta-0.5*acc(pid)%dth-acc(pid)%thmin)/(acc(pid)%thmax-acc(pid)%thmin))) + 1
+      iz = int(acc(pid)%zdim*((phi-0.5*acc(pid)%dph-acc(pid)%phmin)/(acc(pid)%phmax-acc(pid)%phmin))) + 1
 
       select case (mod_)
       case (0,1)  ! set summation limits
@@ -693,19 +644,19 @@ contains
       end select
 
       if (ilo<0 .or. jlo<0 .or. klo<0) return
-      if (ihi>xdim(pid)+1 .or. jhi>ydim(pid)+1 .or. khi>zdim(pid)+1) return
+      if (ihi>acc(pid)%xdim+1 .or. jhi>acc(pid)%ydim+1 .or. khi>acc(pid)%zdim+1) return
 
       sum_ = 0.
       do i=ilo,ihi                      ! triple interpolation loop
-        u = (p - (real(i)-0.5)*dp(pid)-pmin(pid))/dp(pid)
+        u = (p - (real(i)-0.5)*acc(pid)%dp-acc(pid)%pmin)/acc(pid)%dp
         Kx = kernel(u,mod_)
         do j=jlo,jhi
-          v = (theta - (real(j)-0.5)*dth(pid)-thmin(pid))/dth(pid)
+          v = (theta - (real(j)-0.5)*acc(pid)%dth-acc(pid)%thmin)/acc(pid)%dth
           Ky = kernel(v,mod_)
           do k=klo,khi
-            w = (phi - (real(k)-0.5)*dph(pid)-phmin(pid))/dph(pid)
+            w = (phi - (real(k)-0.5)*acc(pid)%dph-acc(pid)%phmin)/acc(pid)%dph
             Kz = kernel(w,mod_)
-            sum_ = sum_ + getMatrixVal(i,j,k,pid)*Kx*Ky*Kz
+            sum_ = sum_ + getMatrixVal(acc(pid),i,j,k)*Kx*Ky*Kz
           end do
         end do
       end do
@@ -720,27 +671,18 @@ contains
   !  Returns acceptance value at cell (i,j) of linearized
   !  parameter table for particle ID
   !*****************************************************************************
-  real(4) function getTableVal(i,j,pid,itab)
-      integer(4), intent(in) :: i, j, pid, itab
+  real(4) function getTableVal(par,i,j,itab)
+      type(ResParameterTable), intent(in) :: par
+      integer(4), intent(in) :: i, j, itab
 
-      integer(4) xdi, ydi, i1, j1, ilin
+      integer(4) i1, j1, ilin
 
-      getTableVal = 0.
-      if (pid<1 .or. pid>nids) return
+      i1 = min(max(1,i),par%xdim)  ! Make sure indexes stay within table.
+      j1 = min(max(1,j),par%ydim)  ! This effectively extrapolates matrix
 
-      xdi = xdimp(pid) ! get table dimensions
-      ydi = ydimp(pid)
+      ilin = i1+par%xdim*(j1-1)    ! linearized index
 
-      i1 = min(max(1,i),xdi)  ! Make sure indexes stay within table.
-      j1 = min(max(1,j),ydi)  ! This effectively extrapolates matrix
-
-      ilin = i1+xdi*(j1-1)    ! linearized index
-
-      if (pid==2) then          ! positron
-        getTableVal = par2p(itab,ilin)
-      else if (pid==3) then     ! electron
-        getTableVal = par3p(itab,ilin)
-      end if
+      getTableVal = par%tab(itab,ilin)
   end function getTableVal
 
 
@@ -748,34 +690,34 @@ contains
   !     Interpolate resolution parameter table as function
   !     of momentum and theta (pin in GeV/c and theta in degree)
   !*****************************************************************************
-  real(4) function param(pin,thin,pid,itab)
+  real(4) function param(par,pin,thin,itab)
       use HAFT_aux, only: kernel
 
+      type(ResParameterTable), intent(in) :: par
       real(4), intent(in) :: pin, thin
-      integer(4), intent(in) :: pid, itab
+      integer(4), intent(in) :: itab
 
       integer(4) xdi, ydi, i, j, ix, iy, ilo, ihi, jlo, jhi, mod_
       real(4) p, th, plo, pup, dp0, thlo, thup, dth0, sum_, u, v, Kx, Ky
 
       mod_ = 1
       param = 0.
-      if (pid<1 .or. pid>nids) return
 
       p = pin
       th = thin
-      plo = pminp(pid)
-      pup = pmaxp(pid)
-      dp0 = dpp(pid)
-      thlo = thminp(pid)
-      thup = thmaxp(pid)
-      dth0 = dthp(pid)
+      plo = par%pmin
+      pup = par%pmax
+      dp0 = par%dp
+      thlo = par%thmin
+      thup = par%thmax
+      dth0 = par%dth
       if (p<plo) p = plo   ! safety fence
       if (p>pup) p = pup
       if (th<thlo) th = thlo
       if (th>thup) th = thup
 
-      xdi = xdimp(pid) ! get table dimensions
-      ydi = ydimp(pid)
+      xdi = par%xdim  ! get table dimensions
+      ydi = par%ydim
 
       ix = int(xdi*((p-0.5*dp0-plo)/(pup-plo))) + 1      ! floor indices
       iy = int(ydi*((th-0.5*dth0-thlo)/(thup-thlo))) + 1
@@ -805,7 +747,7 @@ contains
         do j=jlo,jhi
           v = (th - (real(j)-0.5)*dth0-thlo)/dth0
           Ky = kernel(v,mod_)
-          sum_ = sum_ + getTableVal(i,j,pid,itab)*Kx*Ky
+          sum_ = sum_ + getTableVal(par,i,j,itab)*Kx*Ky
         end do
       end do
 
@@ -846,7 +788,7 @@ contains
       real(4) sigp, betainv, sigms, sigms2, sigthms, sigphms, ploss, respar(10)
       real(4), parameter :: r2d = 180./pi, twopi = 2.*pi
 
-      if (readflag==0) then
+      if (.not.readflag) then
         if (readHAFTmatrix()==-1) return
       end if
 
@@ -878,11 +820,11 @@ contains
 
       !  If resolution parameters are available, use dedicated smearing
 
-      if (resflag(pid)==1) then   ! resolution parameters are loaded for pid?
+      if (par(pid)%resflag) then   ! resolution parameters are loaded for pid?
 
 !        write(6,*) mom(1), mom(2), mom(3), mass, ptot, r2d*theta
          do i=1,ntab    ! look up parameters from tables
-            respar(i) = param(ptot,r2d*theta,pid,i)
+            respar(i) = param(par(pid),ptot,r2d*theta,i)
 !           write(6,*) i, respar(i)
          end do
 
