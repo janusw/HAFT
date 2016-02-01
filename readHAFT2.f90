@@ -367,17 +367,14 @@ module HAFT_single
   character(len=200), save :: fname  = 'HadesAcceptanceFilter.acc'
 
   !  HAFT declaration of acceptance matrix arrays and resolution tables
-  !  The dimensions MUST match all array sizes in the file!
-  integer(4), parameter :: sizem = 250000, &  ! <<== change if < xdim*ydim*zdim
-                           sizep = 1000,   &  ! <<== change if < xdimp*ydimp
-                           nids  = 14         ! <<== change if < max id
+  integer(4), parameter :: nids  = 14         ! <<== change if < max id
 
   ! acceptance matrices for e+, e-, pi+, pi-, K+, K- and p
-  real(4), dimension(sizem) :: matrix2, matrix3, matrix8, matrix9, &
-                               matrix10, matrix12, matrix14
+  real(4), dimension(:), allocatable :: matrix2, matrix3, matrix8, matrix9, &
+                                        matrix10, matrix12, matrix14
 
   ! resolution parameter tables for e+ and e-
-  real(4), dimension(6,sizep) :: par2p, par3p
+  real(4), dimension(:,:), allocatable :: par2p, par3p
 
   integer(4), dimension(nids) :: xdim, ydim, zdim, resflag, xdimp, ydimp
   real(4), dimension(nids) :: dp, dth, dph, pmin, pmax, thmin, thmax, phmin, phmax
@@ -421,14 +418,6 @@ contains
       if (readflag==1) return
 
       readflag = 0
-      ! set all matrices to 0
-      matrix2(:) = 0.
-      matrix3(:) = 0.
-      matrix8(:) = 0.
-      matrix9(:) = 0.
-      matrix10(:) = 0.
-      matrix12(:) = 0.
-      matrix14(:) = 0.
 
       xdim(:) = 0
       ydim(:) = 0
@@ -464,7 +453,6 @@ contains
       read(runit,pos=bytes,err=100) xdim(pid), ydim(pid), zdim(pid)
 
       bins = xdim(pid)*ydim(pid)*zdim(pid)
-      if (bins>sizem) goto 101  ! check if enough memory available
 
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) pmin(pid),pmax(pid),   &
@@ -472,24 +460,31 @@ contains
                                     phmin(pid),phmax(pid)
       bytes = bytes + 6*4
       if (pid==2) then        ! positron
+        allocate(matrix2(bins), source=0._4)
         read(runit,pos=bytes,err=100) matrix2(1:bins)
         write(6,'(''Matrix read for e+'')')
       else if (pid==3) then     ! electron
+        allocate(matrix3(bins), source=0._4)
         read(runit,pos=bytes,err=100) matrix3(1:bins)
         write(6,'(''Matrix read for e-'')')
       else if (pid==8) then     ! pi+
+        allocate(matrix8(bins), source=0._4)
         read(runit,pos=bytes,err=100) matrix8(1:bins)
         write(6,'(''Matrix read for pi+'')')
       else if (pid==9) then     ! pi-
+        allocate(matrix9(bins), source=0._4)
         read(runit,pos=bytes,err=100) matrix9(1:bins)
         write(6,'(''Matrix read for pi-'')')
       else if (pid==10) then    ! K+
+        allocate(matrix10(bins), source=0._4)
         read(runit,pos=bytes,err=100) matrix10(1:bins)
         write(6,'(''Matrix read for K+'')')
       else if (pid==12) then    ! K-
+        allocate(matrix12(bins), source=0._4)
         read(runit,pos=bytes,err=100) matrix12(1:bins)
         write(6,'(''Matrix read for K-'')')
       else if (pid==14) then    ! proton
+        allocate(matrix14(bins), source=0._4)
         read(runit,pos=bytes,err=100) matrix14(1:bins)
         write(6,'(''Matrix read for p'')')
       else
@@ -520,7 +515,6 @@ contains
       read(runit,pos=bytes,err=100) xdimp(pid), ydimp(pid)
 
       bins = xdimp(pid)*ydimp(pid)
-      if (bins>sizep) goto 101  ! check if enough memory available
 
       bytes = bytes + 2*4
       read(runit,pos=bytes,err=100) pminp(pid),pmaxp(pid), &
@@ -529,12 +523,14 @@ contains
       read(runit,pos=bytes,err=100) ntab ! nb. of parameter tables
       bytes = bytes + 4
       if (pid==2) then          ! positron
+        allocate(par2p(ntab,bins), source=0._4)
         do i=1,ntab
           read(runit,pos=bytes,err=100) par2p(i,1:bins)
           bytes = bytes + bins*4
         end do
         write(6,'(''Resolution tables read for e+'')')
       else if (pid==3) then     ! electron
+        allocate(par3p(ntab,bins), source=0._4)
         do i=1,ntab
           read(runit,pos=bytes,err=100) par3p(i,1:bins)
           bytes = bytes + bins*4
@@ -571,10 +567,6 @@ contains
       return
  100  close(runit)
       write(6,*) 'Read error on unit ', runit, ' File = ',trim(fname)
-      readHAFTmatrix = -1
-      return
- 101  close(runit)
-      write(6,*) 'Size error: ', bins, ' >', sizem,' File = ',trim(fname)
       readHAFTmatrix = -1
       return
  102  close(runit)
@@ -1012,11 +1004,7 @@ module HAFT_pair
   character(len=200), save :: fname = 'HadesPairAcceptanceFilter.acc'
 
   !  HAFT declaration of acceptance matrix arrays
-  !  The dimensions MUST match all array sizes in the file!
-  integer(4), parameter :: sizem = 250000  ! <<== change if < xdim*ydim*zdim
-
-  ! pair acceptance matrix
-  real(4), dimension(sizem) :: matrix51
+  real(4), dimension(:), allocatable :: matrix51
 
   character(len=80) :: comment
   integer(4) :: xdim, ydim, zdim, readflag2 = 0
@@ -1137,8 +1125,6 @@ contains
       if (readflag2==1) return
 
       readflag2 = 0
-      ! set matrix to 0
-      matrix51(:) = 0.
 
       open(unit=runit,file=fname,access='stream',status='old',err=99)
       bytes=1
@@ -1148,7 +1134,7 @@ contains
       read(runit,pos=bytes,err=100) xdim, ydim, zdim
 
       bins = xdim*ydim*zdim
-      if (bins>sizem) goto 101  ! check if enough memory available
+      allocate(matrix51(bins), source=0._4)
 
       bytes = bytes + 3*4
       read(runit,pos=bytes,err=100) mmin,mmax,ptmin,ptmax,rapmin,rapmax
@@ -1179,10 +1165,6 @@ contains
       return
  100  close(runit)
       write(6,*) 'Read error on unit ', runit, ' File = ',trim(fname)
-      readHAFTPairMatrix = -1
-      return
- 101  close(runit)
-      write(6,*) 'Size error: ', bins, ' >', sizem, ' File = ',trim(fname)
       readHAFTPairMatrix = -1
       return
   end function readHAFTPairMatrix
