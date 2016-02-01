@@ -691,30 +691,17 @@ contains
       real(4), intent(in) :: pin, thin
       integer(4), intent(in) :: itab
 
-      integer(4) xdi, ydi, i, j, ix, iy, ilo, ihi, jlo, jhi, mod_
-      real(4) p, th, plo, pup, dp0, thlo, thup, dth0, sum_, u, v, Kx, Ky
+      integer(4) i, j, ix, iy, ilo, ihi, jlo, jhi, mod_
+      real(4) p, th, sum_, u, v, Kx, Ky
 
       mod_ = 1
       param = 0.
 
-      p = pin
-      th = thin
-      plo = par%pmin
-      pup = par%pmax
-      dp0 = par%dp
-      thlo = par%thmin
-      thup = par%thmax
-      dth0 = par%dth
-      if (p<plo) p = plo   ! safety fence
-      if (p>pup) p = pup
-      if (th<thlo) th = thlo
-      if (th>thup) th = thup
+      p = min(max(pin,par%pmin),par%pmax)  ! safety fence
+      th = min(max(thin,par%thmin),par%thmax)
 
-      xdi = par%xdim  ! get table dimensions
-      ydi = par%ydim
-
-      ix = int(xdi*((p-0.5*dp0-plo)/(pup-plo))) + 1      ! floor indices
-      iy = int(ydi*((th-0.5*dth0-thlo)/(thup-thlo))) + 1
+      ix = int(par%xdim*((p-0.5*par%dp-par%pmin)/(par%pmax-par%pmin))) + 1      ! floor indices
+      iy = int(par%ydim*((th-0.5*par%dth-par%thmin)/(par%thmax-par%thmin))) + 1
 
       select case (mod_)
       case (0,1)  ! set summation limits
@@ -732,14 +719,14 @@ contains
       end select
 
       if (ilo<0 .or. jlo<0) return
-      if (ihi>xdi+1 .or. jhi>ydi+1) return
+      if (ihi>par%xdim+1 .or. jhi>par%ydim+1) return
 
       sum_ = 0.
       do i=ilo,ihi                      ! double interpolation loop
-        u = (p - (real(i)-0.5)*dp0-plo)/dp0
+        u = (p - (real(i)-0.5)*par%dp-par%pmin)/par%dp
         Kx = kernel(u,mod_)
         do j=jlo,jhi
-          v = (th - (real(j)-0.5)*dth0-thlo)/dth0
+          v = (th - (real(j)-0.5)*par%dth-par%thmin)/par%dth
           Ky = kernel(v,mod_)
           sum_ = sum_ + getTableVal(par,i,j,itab)*Kx*Ky
         end do
