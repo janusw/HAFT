@@ -435,94 +435,92 @@ contains
       bytes=1
       write(6,*) ' '
       read(runit,pos=bytes,err=100) comment
+      bytes = bytes + 80
       write(6,'(a80)') comment
       write(6,*) '--------------------------------------'
-      bytes = bytes + 80
-      read(runit,pos=bytes,err=100) sigpA(1:3), sigpB(1:3), &
-                                    sigth, sigph, XX0
+      read(runit,pos=bytes,err=100) sigpA(1:3), sigpB(1:3), sigth, sigph, XX0
       bytes = bytes + 9*4
 
- 40   read(runit,pos=bytes,end=50,err=100) pid  ! break out if EOF reached
-      if (pid<0) goto 45
-      if (pid<1 .or. pid>nids) goto 50
+      do
 
-      ! read acceptance matrix
+        read(runit,pos=bytes,end=50,err=100) pid  ! break out if EOF reached
+        bytes = bytes + 4
 
-      bytes = bytes + 4
-      read(runit,pos=bytes,err=100) acc(pid)%xdim, acc(pid)%ydim, acc(pid)%zdim
+        if (pid>=0) then
 
-      bins = acc(pid)%xdim * acc(pid)%ydim * acc(pid)%zdim
+          ! read acceptance matrix
+          if (pid<1 .or. pid>nids) then
+            write(6,*) 'acceptance not yet supported for PID ', pid, ' File = ',trim(fname)
+            stop
+          end if
 
-      bytes = bytes + 3*4
-      read(runit,pos=bytes,err=100) acc(pid)%pmin, acc(pid)%pmax,   &
-                                    acc(pid)%thmin, acc(pid)%thmax, &
-                                    acc(pid)%phmin, acc(pid)%phmax
-      bytes = bytes + 6*4
-      if (pid<nids) then
-        allocate(acc(pid)%matrix(bins), source=0._4)
-        read(runit,pos=bytes,err=100) acc(pid)%matrix(1:bins)
-        write(6,'(''Matrix read for pid '',I3)') pid
-      else
-        write(6,'(''Unsupported particle ID: '',I3,''  STOP!'')')
-        stop
-      end if
-      bytes = bytes + bins*4
+          read(runit,pos=bytes,err=100) acc(pid)%xdim, acc(pid)%ydim, acc(pid)%zdim
+          bytes = bytes + 3*4
 
-!     write(6,*) 'Acceptance matrix for ID= ',pid
-      write(6,*) 'dims= ',acc(pid)%xdim, ' ', acc(pid)%ydim, ' ', acc(pid)%zdim
-      write(6,*) 'lims= ',acc(pid)%pmin, ' ', acc(pid)%pmax, ' ', acc(pid)%thmin, &
-                 ' ', acc(pid)%thmax, ' ', acc(pid)%phmin, ' ', acc(pid)%phmax
-      write(6,*) 'size of matrix :', bins
-      write(6,*) '--------------------------------------'
-      acc(pid)%dp = (acc(pid)%pmax-acc(pid)%pmin)/real(acc(pid)%xdim)
-      acc(pid)%dth = (acc(pid)%thmax-acc(pid)%thmin)/real(acc(pid)%ydim)
-      acc(pid)%dph = (acc(pid)%phmax-acc(pid)%phmin)/real(acc(pid)%zdim)
+          bins = acc(pid)%xdim * acc(pid)%ydim * acc(pid)%zdim
 
-      goto 40  ! loop until EOF is reached
+          read(runit,pos=bytes,err=100) acc(pid)%pmin, acc(pid)%pmax,   &
+                                        acc(pid)%thmin, acc(pid)%thmax, &
+                                        acc(pid)%phmin, acc(pid)%phmax
+          bytes = bytes + 6*4
 
-      ! read resolution parameters
-
- 45   pid = -pid
-      if (pid<2 .or. pid>3) goto 102
-
-      bytes = bytes + 4
-      read(runit,pos=bytes,err=100) par(pid)%xdim, par(pid)%ydim
-
-      bins = par(pid)%xdim*par(pid)%ydim
-
-      bytes = bytes + 2*4
-      read(runit,pos=bytes,err=100) par(pid)%pmin, par(pid)%pmax, &
-                                    par(pid)%thmin, par(pid)%thmax
-      bytes = bytes + 4*4
-      read(runit,pos=bytes,err=100) ntab ! nb. of parameter tables
-      bytes = bytes + 4
-      if (pid<nids) then
-        allocate(par(pid)%tab(ntab,bins), source=0._4)
-        do i=1,ntab
-          read(runit,pos=bytes,err=100) par(pid)%tab(i,1:bins)
+          allocate(acc(pid)%matrix(bins), source=0._4)
+          read(runit,pos=bytes,err=100) acc(pid)%matrix(1:bins)
           bytes = bytes + bins*4
-        end do
-        write(6,'(''Resolution tables read for pid'',I3)') pid
-        par(pid)%resflag = .true.
-      else
-        write(6,'(''Unsupported PID: '',I3,'' Use default smearing!'')')
-        par(pid)%resflag = .false.
-        goto 40
-      end if
 
-!     write(6,*) 'Parameter tables for ID= ',pid
-      write(6,*) 'dims= ',par(pid)%xdim, ' ', par(pid)%ydim
-      write(6,*) 'lims= ',par(pid)%pmin, ' ', par(pid)%pmax, ' ', &
-                          par(pid)%thmin, ' ', par(pid)%thmax
-      write(6,*) 'size of parameter tables :', ntab, ' x', bins
-      write(6,*) '--------------------------------------'
-      par(pid)%dp  = (par(pid)%pmax-par(pid)%pmin)   / real(par(pid)%xdim)
-      par(pid)%dth = (par(pid)%thmax-par(pid)%thmin) / real(par(pid)%ydim)
+          write(6,*) 'Acceptance matrix read for ID= ', pid
+          write(6,*) 'dims= ',acc(pid)%xdim, ' ', acc(pid)%ydim, ' ', acc(pid)%zdim
+          write(6,*) 'lims= ',acc(pid)%pmin, ' ', acc(pid)%pmax, ' ', acc(pid)%thmin, &
+                    ' ', acc(pid)%thmax, ' ', acc(pid)%phmin, ' ', acc(pid)%phmax
+          write(6,*) 'size of matrix :', bins
+          write(6,*) '--------------------------------------'
+          acc(pid)%dp = (acc(pid)%pmax-acc(pid)%pmin)/real(acc(pid)%xdim)
+          acc(pid)%dth = (acc(pid)%thmax-acc(pid)%thmin)/real(acc(pid)%ydim)
+          acc(pid)%dph = (acc(pid)%phmax-acc(pid)%phmin)/real(acc(pid)%zdim)
 
-      goto 40  ! loop until EOF is reached
+        else
+
+          ! read resolution parameters
+          pid = -pid
+          if (pid<1 .or. pid>nids) then
+            write(6,*) 'resolution not yet supported for PID ', pid, ' File = ',trim(fname)
+            stop
+          end if
+
+          read(runit,pos=bytes,err=100) par(pid)%xdim, par(pid)%ydim
+          bytes = bytes + 2*4
+
+          bins = par(pid)%xdim*par(pid)%ydim
+
+          read(runit,pos=bytes,err=100) par(pid)%pmin, par(pid)%pmax, &
+                                        par(pid)%thmin, par(pid)%thmax
+          bytes = bytes + 4*4
+
+          read(runit,pos=bytes,err=100) ntab ! nb. of parameter tables
+          bytes = bytes + 4
+
+          allocate(par(pid)%tab(ntab,bins), source=0._4)
+          do i=1,ntab
+            read(runit,pos=bytes,err=100) par(pid)%tab(i,1:bins)
+            bytes = bytes + bins*4
+          end do
+
+          par(pid)%resflag = .true.
+
+          write(6,*) 'Resolution tables read for ID= ', pid
+          write(6,*) 'dims= ',par(pid)%xdim, ' ', par(pid)%ydim
+          write(6,*) 'lims= ',par(pid)%pmin, ' ', par(pid)%pmax, ' ', &
+                              par(pid)%thmin, ' ', par(pid)%thmax
+          write(6,*) 'size of parameter tables :', ntab, ' x', bins
+          write(6,*) '--------------------------------------'
+          par(pid)%dp  = (par(pid)%pmax-par(pid)%pmin)   / real(par(pid)%xdim)
+          par(pid)%dth = (par(pid)%thmax-par(pid)%thmin) / real(par(pid)%ydim)
+
+        end if
+
+      end do
 
  50   close(runit)
-
       readHAFTmatrix = bytes-1 ! return number of bytes read
       readflag = .true.
       return
@@ -534,10 +532,6 @@ contains
       return
  100  close(runit)
       write(6,*) 'Read error on unit ', runit, ' File = ',trim(fname)
-      readHAFTmatrix = -1
-      return
- 102  close(runit)
-      write(6,*) 'PID not yet supported: ', pid, ' File = ',trim(fname)
       readHAFTmatrix = -1
       return
   end function readHAFTmatrix
