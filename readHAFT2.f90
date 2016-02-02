@@ -909,7 +909,6 @@ end module HAFT_single
 !                 acc = getHadesPairAcceptance(mass,pt,rapidity,mode)
 !          3) set resolution parameters via
 !                 call setResolutionParameters(...)
-!                 call setAngularResolutionParameters(...)
 !          4) apply detector resolution via
 !                 call smearHadesPair(...)
 !*******************************************************************************
@@ -921,7 +920,7 @@ module HAFT_pair
 
   public :: setPairFileName
   public :: getHadesPairAcceptance
-  public :: setResolutionParameters, setAngularResolutionParameters
+  public :: setResolutionParameters
   public :: smearHadesPair
 
   character(len=200), save :: fname = 'HadesPairAcceptanceFilter.acc'
@@ -934,7 +933,7 @@ module HAFT_pair
   integer(4) :: xdim, ydim, zdim
   real(4) :: mmin, mmax, ptmin, ptmax, rapmin, rapmax
   real :: dm, dpt, drap
-  real :: sigpA(3), sigpB(3), sigth, sigph  ! resolution parameters
+  real :: sigpA(3), sigpB(3)  ! resolution parameters
 
 contains
 
@@ -1207,21 +1206,6 @@ contains
       write(6,*) 'mode=2   ', ' ', sigpA(2), ' ', sigpB(2)
       write(6,*) 'mode=3   ', ' ', sigpA(3), ' ', sigpB(3)
   end subroutine setResolutionParameters
-
-
-  !*****************************************************************************
-  !     Set angular resolution parameters
-  !*****************************************************************************
-  subroutine setAngularResolutionParameters(stheta,sphi)
-      real, intent(in) :: stheta, sphi
-
-      if (stheta>0. .and. sphi>0.) then
-         sigth = stheta
-         sigph = sphi
-      endif
-
-      write(6,*) 'dTh, dPh:', ' ', sigth, ' ', sigph
-  end subroutine setAngularResolutionParameters
 
 
 end module HAFT_pair

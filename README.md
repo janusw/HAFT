@@ -24,6 +24,5 @@ The module 'HAFT_pair' provides routines for pair acceptance filtering. Usage:
         `acc = getHadesPairAcceptance(mass,pt,rapidity,mode)`
 3. set resolution parameters via
         `call setResolutionParameters(...)`
-        `call setAngularResolutionParameters(...)`
 4. apply detector resolution via
         `call smearHadesPair(...)`
