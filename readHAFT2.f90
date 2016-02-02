@@ -35,9 +35,9 @@ module HAFT_aux
 
   public :: kernel, sampleGauss, sampleMP, interpol
 
-  real(4), parameter, public :: pi = 3.141592654
+  real, parameter, public :: pi = 3.141592654
 
-  real(4), parameter :: lg10 = log(10.)
+  real, parameter :: lg10 = log(10.)
 
 contains
 
@@ -56,12 +56,12 @@ contains
   !  mode >=0: interpolating (i.e. exact at grid points)
   !  mode < 0: approximating (i.e. not exact, but smoother)
   !*****************************************************************************
-  real(4) function kernel(u,mode)
+  real function kernel(u,mode)
 
-      real(4), intent(in) :: u
-      integer(4), intent(in) :: mode
+      real, intent(in) :: u
+      integer, intent(in) :: mode
 
-      real(4) ua
+      real :: ua
 
       select case (mode)
       case (0)  ! nearest neighbour
@@ -151,10 +151,10 @@ contains
   !*****************************************************************************
   !  Return random number according to a normal distribution.
   !*****************************************************************************
-  real(4) function sampleGauss(mean,sigma)
-      real(4), intent(in) :: mean, sigma
+  real function sampleGauss(mean,sigma)
+      real, intent(in) :: mean, sigma
 
-      real(4) theta, r(2)
+      real :: theta, r(2)
 
       sampleGauss = mean
       if (sigma<=0.) return
@@ -167,11 +167,11 @@ contains
   !*****************************************************************************
   !     HADES momentum spread (pRec-pSim)/pSim
   !*****************************************************************************
-  real(4) function momSpread(x,respar,ns)
+  real function momSpread(x,respar,ns)
 
-      real(4), intent(in) :: x, respar(10), ns
+      real, intent(in) :: x, respar(10), ns
 
-      real(4) pos, sig, left, right, farleft, argn, argp, argn2, e2, amp
+      real :: pos, sig, left, right, farleft, argn, argp, argn2, e2, amp
 
       e2 = exp(-0.5*ns*ns)
 
@@ -212,13 +212,13 @@ contains
   !*****************************************************************************
   !  Return random number according to the normalized HADES momentum distribution.
   !*****************************************************************************
-  real(4) function sampleMP(respar,ns)
+  real function sampleMP(respar,ns)
 
-      real(4), intent(in) :: respar(10), ns
+      real, intent(in) :: respar(10), ns
 
-      real(4) pos, sig, left, right, farleft, A(0:3), F(0:3)
-      real(4) dx, ftest, r1, r2, r3, e2
-      integer(4) cnt, cnt1, cnt2, cnt3
+      real :: pos, sig, left, right, farleft, A(0:3), F(0:3)
+      real :: dx, ftest, r1, r2, r3, e2
+      integer :: cnt, cnt1, cnt2, cnt3
 
       e2 = exp(-0.5*ns*ns)
 
@@ -312,12 +312,12 @@ contains
   !*****************************************************************************
   !     linear interpolation in table (xtab,ytab)
   !*****************************************************************************
-  real(4) function interpol(x,xtab,ytab,n)
-      real(4), intent(in) :: x, xtab(*), ytab(*)
-      integer(4), intent(in) :: n
+  real function interpol(x,xtab,ytab,n)
+      real, intent(in) :: x, xtab(*), ytab(*)
+      integer, intent(in) :: n
 
-      integer(4) i
-      real(4) a, b
+      integer :: i
+      real :: a, b
 
       if (x<=xtab(1)) then ! below table range
         interpol = ytab(1)
@@ -367,14 +367,14 @@ module HAFT_single
   character(len=200), save :: fname  = 'HadesAcceptanceFilter.acc'
 
   !  HAFT declaration of acceptance matrix arrays and resolution tables
-  integer(4), parameter :: nids  = 14         ! <<== change if < max id
+  integer, parameter :: nids  = 14         ! <<== change if < max id
 
   type :: AcceptanceMatrix
     real(4), dimension(:), allocatable :: matrix     ! the actual matrix
     integer(4) :: xdim = 0, ydim = 0, zdim = 0       ! dimensions
     real(4) :: pmin = 0., thmin = 0., phmin = 0., &  ! limits
                pmax = 0., thmax = 0., phmax = 0.
-    real(4) :: dp = 0., dth = 0., dph = 0.           ! step sizes
+    real :: dp = 0., dth = 0., dph = 0.              ! step sizes
   end type
 
   ! acceptance matrices for e+, e-, pi+, pi-, K+, K- and p
@@ -384,7 +384,7 @@ module HAFT_single
     real(4), dimension(:,:), allocatable :: tab  ! the actual table
     integer(4) :: xdim, ydim                     ! dimensions
     real(4) :: pmin, pmax, thmin, thmax          ! limits
-    real(4) :: dp, dth                           ! step sizes
+    real :: dp, dth                              ! step sizes
     logical :: resflag = .false.                 ! parameters loaded?
   end type
 
@@ -404,7 +404,7 @@ contains
   subroutine setFileName(name)
       character*(*), intent(in) :: name
 
-      integer(4) dummy
+      integer :: dummy
 
       fname = name
       dummy = readHAFTmatrix()
@@ -418,12 +418,12 @@ contains
   !  Opens file in unformatted direct access mode
   !  and reads HADES acceptance matrices (as linearized arrays)
   !*****************************************************************************
-  integer(4) function readHAFTmatrix()
+  integer function readHAFTmatrix()
 
-      integer(4), parameter :: runit = 77  ! change if input unit is already busy
+      integer, parameter :: runit = 77  ! change if input unit is already busy
 
-      integer(4) pid, i, bins
-      integer(4) bytes       ! byte counter
+      integer(4) :: pid
+      integer :: i, bins, bytes
 
       readHAFTmatrix = 0
 
@@ -541,11 +541,11 @@ contains
   !  Returns acceptance value at cell (i,j,k) of linearized matrix
   !  for particle ID
   !*****************************************************************************
-  real(4) function getMatrixVal(acc,i,j,k)
+  real function getMatrixVal(acc,i,j,k)
       type(AcceptanceMatrix), intent(in) :: acc
-      integer(4), intent(in) :: i, j, k
+      integer, intent(in) :: i, j, k
 
-      integer(4) i1, j1, k1, ilin
+      integer :: i1, j1, k1, ilin
 
       i1 = min(max(1,i),acc%xdim)  ! Make sure indexes stay within table.
       j1 = min(max(1,j),acc%ydim)  ! This effectively extrapolates matrix
@@ -586,15 +586,15 @@ contains
   !       = 4 : tri-cubic Catmull-Rom spline
   !       =-4 : tri-cubic optimal cardinal spline
   !*****************************************************************************
-  real(4) function getHadesAcceptance(pid,p0,theta0,phi0,mode)
+  real function getHadesAcceptance(pid,p0,theta0,phi0,mode)
       use HAFT_aux, only: kernel
 
-      integer(4), intent(in) :: pid
-      real(4), intent(in) :: p0, theta0, phi0
-      integer(4), intent(in), optional :: mode
+      integer, intent(in) :: pid
+      real, intent(in) :: p0, theta0, phi0
+      integer, intent(in), optional :: mode
 
-      real(4) p, theta, phi, u, v, w, sum_, Kx, Ky, Kz
-      integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi, mod_
+      real :: p, theta, phi, u, v, w, sum_, Kx, Ky, Kz
+      integer :: ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi, mod_
 
       if (present(mode)) then
         mod_ = mode
@@ -612,7 +612,7 @@ contains
       p = min(p0,acc(pid)%pmax-2.01*acc(pid)%dp)  ! level off acceptance at high p
       theta = theta0
       phi = phi0
-      if (phi > 60.) phi = mod(phi,60._4)   ! modulo HADES sector
+      if (phi > 60.) phi = mod(phi,60.)   ! modulo HADES sector
 
       ix = int(acc(pid)%xdim*((p-0.5*acc(pid)%dp-acc(pid)%pmin)/(acc(pid)%pmax-acc(pid)%pmin))) + 1  ! floor indices
       iy = int(acc(pid)%ydim*((theta-0.5*acc(pid)%dth-acc(pid)%thmin)/(acc(pid)%thmax-acc(pid)%thmin))) + 1
@@ -665,11 +665,11 @@ contains
   !  Returns acceptance value at cell (i,j) of linearized
   !  parameter table for particle ID
   !*****************************************************************************
-  real(4) function getTableVal(par,i,j,itab)
+  real function getTableVal(par,i,j,itab)
       type(ResParameterTable), intent(in) :: par
-      integer(4), intent(in) :: i, j, itab
+      integer, intent(in) :: i, j, itab
 
-      integer(4) i1, j1, ilin
+      integer :: i1, j1, ilin
 
       i1 = min(max(1,i),par%xdim)  ! Make sure indexes stay within table.
       j1 = min(max(1,j),par%ydim)  ! This effectively extrapolates matrix
@@ -684,15 +684,15 @@ contains
   !     Interpolate resolution parameter table as function
   !     of momentum and theta (pin in GeV/c and theta in degree)
   !*****************************************************************************
-  real(4) function param(par,pin,thin,itab)
+  real function param(par,pin,thin,itab)
       use HAFT_aux, only: kernel
 
       type(ResParameterTable), intent(in) :: par
-      real(4), intent(in) :: pin, thin
-      integer(4), intent(in) :: itab
+      real, intent(in) :: pin, thin
+      integer, intent(in) :: itab
 
-      integer(4) i, j, ix, iy, ilo, ihi, jlo, jhi, mod_
-      real(4) p, th, sum_, u, v, Kx, Ky
+      integer :: i, j, ix, iy, ilo, ihi, jlo, jhi, mod_
+      real :: p, th, sum_, u, v, Kx, Ky
 
       mod_ = 1
       param = 0.
@@ -761,13 +761,13 @@ contains
   subroutine smearHades4Momentum(mom,mode,pid)
       use HAFT_aux, only: pi, sampleGauss, sampleMP
 
-      real(4), intent(inout) :: mom(4)
-      integer(4), intent(in) :: mode,pid
+      real, intent(inout) :: mom(4)
+      integer, intent(in) :: mode,pid
 
-      integer(4) i
-      real(4) mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
-      real(4) sigp, betainv, sigms, sigms2, sigthms, sigphms, ploss, respar(10)
-      real(4), parameter :: r2d = 180./pi, twopi = 2.*pi
+      integer :: i
+      real :: mass, mass2, pt, pt2, ptot, ptot2, theta, phi, sinth
+      real :: sigp, betainv, sigms, sigms2, sigthms, sigphms, ploss, respar(10)
+      real, parameter :: r2d = 180./pi, twopi = 2.*pi
 
       if (.not.readflag) then
         if (readHAFTmatrix()==-1) return
@@ -809,7 +809,7 @@ contains
 !           write(6,*) i, respar(i)
          end do
 
-         ptot = ptot*(1.+sampleMP(respar,2._4))  ! randomize momentum
+         ptot = ptot*(1.+sampleMP(respar,2.))  ! randomize momentum
 
       else  ! use default gaussian smearing
 
@@ -850,9 +850,9 @@ contains
 
   subroutine smearHadesMomentum(p,mode,pid)
       real, intent(inout) :: p(0:3)
-      integer(4), intent(in) :: mode, pid
+      integer, intent(in) :: mode, pid
 
-      real(4) mom4(4)
+      real :: mom4(4)
 
       mom4(1:3) = p(1:3)
       mom4(4) = p(0)
@@ -869,10 +869,10 @@ contains
   !  scattering assuming the particle is an electron)
   !*****************************************************************************
   subroutine smearHades3Momentum(mom3,mode,pid)
-      real(4), intent(inout) :: mom3(3)
-      integer(4), intent(in) :: mode,pid
+      real, intent(inout) :: mom3(3)
+      integer, intent(in) :: mode,pid
 
-      real(4) mom4(4), mass
+      real :: mom4(4), mass
 
       if (mode<1 .or. mode>3) return    ! unknown mode
 
@@ -930,9 +930,11 @@ module HAFT_pair
   real(4), dimension(:), allocatable :: matrix51
 
   character(len=80) :: comment
-  integer(4) :: xdim, ydim, zdim, readflag2 = 0
-  real(4) sigpA(3), sigpB(3), sigth, sigph  ! resolution parameters
-  real(4) dm, dpt, drap, mmin, mmax, ptmin, ptmax, rapmin, rapmax
+  logical :: readflag = .false.
+  integer(4) :: xdim, ydim, zdim
+  real(4) :: mmin, mmax, ptmin, ptmax, rapmin, rapmax
+  real :: dm, dpt, drap
+  real :: sigpA(3), sigpB(3), sigth, sigph  ! resolution parameters
 
 contains
 
@@ -959,14 +961,14 @@ contains
   !       = 4 : tri-cubic Catmull-Rom spline
   !       =-4 : tri-cubic optimal cardinal spline
   !*****************************************************************************
-  real(4) function getHadesPairAcceptance(mass0,pt0,rap0,mode)
+  real function getHadesPairAcceptance(mass0,pt0,rap0,mode)
       use HAFT_aux, only: kernel
 
-      real(4), intent(in) :: mass0, pt0, rap0
-      integer(4), intent(in), optional :: mode
+      real, intent(in) :: mass0, pt0, rap0
+      integer, intent(in), optional :: mode
 
-      real(4) mass, pt, rap, u, v, w, sum_, Kx, Ky, Kz
-      integer(4) ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi, mod_
+      real :: mass, pt, rap, u, v, w, sum_, Kx, Ky, Kz
+      integer :: ix, iy, iz, i, j, k, ilo, ihi, jlo, jhi, klo, khi, mod_
 
       getHadesPairAcceptance = 0.
 
@@ -1036,18 +1038,17 @@ contains
   !  Opens file in unformatted direct access mode
   !  and reads HADES pair acceptance matrix (as linearized array)
   !*****************************************************************************
-  integer(4) function readHAFTPairMatrix()
+  integer function readHAFTPairMatrix()
 
-      integer(4), parameter :: runit = 78  ! change if input unit is already busy
+      integer, parameter :: runit = 78  ! change if input unit is already busy
 
-      integer(4) bins
-      integer(4) bytes       ! byte counter
+      integer :: bins, bytes
 
       readHAFTPairMatrix = 0
 
-      if (readflag2==1) return
+      if (readflag) return
 
-      readflag2 = 0
+      readflag = .false.
 
       open(unit=runit,file=fname,access='stream',status='old',err=99)
       bytes=1
@@ -1078,7 +1079,7 @@ contains
       write(6,*) 'size of matrix :', bins
 
       readHAFTPairMatrix = bytes-1 ! return number of bytes read
-      readflag2 = 1
+      readflag = .true.
       return
 
       ! Error opening or reading
@@ -1099,7 +1100,7 @@ contains
   subroutine setPairFileName(name)
       character*(*), intent(in) :: name
 
-      integer(4) dummy
+      integer :: dummy
 
       fname = name
       dummy = readHAFTPairMatrix()
@@ -1113,10 +1114,10 @@ contains
   !  Returns acceptance value at cell (i,j,k) of linearized matrix
   !  for particle ID
   !*****************************************************************************
-  real(4) function getMatrixVal(i,j,k)
-      integer(4), intent(in) :: i, j, k
+  real function getMatrixVal(i,j,k)
+      integer, intent(in) :: i, j, k
 
-      integer(4) i1, j1, k1, ilin
+      integer :: i1, j1, k1, ilin
 
       i1 = min(max(1,i),xdim)  ! Make sure indexes stay within table.
       j1 = min(max(1,j),ydim)  ! This effectively extrapolates matrix
@@ -1136,23 +1137,23 @@ contains
   subroutine smearHadesPair(pair,mode)
       use HAFT_aux, only: interpol, sampleGauss, sampleMP
 
-      real(4), intent(inout) :: pair(3)
-      integer(4), intent(in) :: mode
+      real, intent(inout) :: pair(3)
+      integer, intent(in) :: mode
 
-      real(4) m, pt, rap, sigpt, sigm, sigrap, respar(10)
+      real :: m, pt, rap, sigpt, sigm, sigrap, respar(10)
 
-      real(4), parameter :: mtab(10) = (/ 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2 /)  ! mass grid
-      real(4), parameter :: par1(10) = (/ 0.0077, -0.0082, -0.0125, -0.0120, -0.0114, &
+      real, parameter :: mtab(10) = (/ 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2 /)  ! mass grid
+      real, parameter :: par1(10) = (/ 0.0077, -0.0082, -0.0125, -0.0120, -0.0114, &
                                         -0.0106, -0.0098, -0.0085, -0.0078, -0.0075 /)
-      real(4), parameter :: par2(10) = (/ 0.0820, 0.0460, 0.0260, 0.0210, 0.0190, &
+      real, parameter :: par2(10) = (/ 0.0820, 0.0460, 0.0260, 0.0210, 0.0190, &
                                          0.0183, 0.0182, 0.0181, 0.0180, 0.0180 /)
-      real(4), parameter :: par3(10) = (/ 13.5, 16.2, 19.9, 20.2, 19.2, &
+      real, parameter :: par3(10) = (/ 13.5, 16.2, 19.9, 20.2, 19.2, &
                                          18.0, 16.9, 14.8, 12.8, 11.0 /)
-      real(4), parameter :: par4(10) = (/-10.0, -15.4, -20.4, -23.1, -22.3, &
+      real, parameter :: par4(10) = (/-10.0, -15.4, -20.4, -23.1, -22.3, &
                                         -21.6, -20.6, -19.4, -18.2, -17.9 /)
-      real(4), parameter :: par5(10) = (/ 18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7 /)
+      real, parameter :: par5(10) = (/ 18.1, 11.6, 10.4, 10.0, 9.4, 8.5, 7.8, 7.0, 6.2, 5.7 /)
 
-      if (readflag2==0) then
+      if (.not.readflag) then
         if (readHAFTPairMatrix()==-1) return
       end if
 
@@ -1172,7 +1173,7 @@ contains
 !        do i=1,5    ! interpolate parameters
 !          write(6,*) i, respar(i)
 !        end do
-        m = m*(1.+sampleMP(respar,sqrt(2._4)))                  ! randomize mass
+        m = m*(1.+sampleMP(respar,sqrt(2.)))                  ! randomize mass
       else ! use gaussian smearing
         sigpt = 0.01*pt*(sigpA(mode)+sigpB(mode)*pt)/sqrt(2.) ! pt resolution
         pt = max(0.,sampleGauss(pt,sigpt))                  ! smear pt
@@ -1194,8 +1195,8 @@ contains
   !     Set momentum resolution parameters
   !*****************************************************************************
   subroutine setResolutionParameters(mode,a,b)
-      real(4), intent(in) :: a, b
-      integer(4), intent(in) :: mode
+      real, intent(in) :: a, b
+      integer, intent(in) :: mode
 
       if (mode>=1 .and. mode<=3) then
          sigpA(mode) = a
@@ -1212,7 +1213,7 @@ contains
   !     Set angular resolution parameters
   !*****************************************************************************
   subroutine setAngularResolutionParameters(stheta,sphi)
-      real(4), intent(in) :: stheta, sphi
+      real, intent(in) :: stheta, sphi
 
       if (stheta>0. .and. sphi>0.) then
          sigth = stheta
