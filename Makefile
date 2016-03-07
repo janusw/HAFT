@@ -22,10 +22,19 @@ ifeq ($(FORT_NOPATH),pgf95)
 endif
 
 
+# default target: build the HAFT code with a Fortran compiler
+HAFT: readHAFT2.o
+
 %.o: %.f90
 	$(FORT) $(FFLAGS) -c $<
 
-HAFT: readHAFT2.o
+# target 'f2py': build the HAFT Python bindings via f2py
+f2py: HAFT.so
+
+HAFT.so: readHAFT2.f90
+	f2py -m HAFT -c $< skip: momspread readhaftmatrix getmatrixval gettableval param smearhades4momentum readhaftpairmatrix
+
+all: HAFT f2py
 
 clean:
-	@rm -f *.o *.mod
+	@rm -f *.o *.so *.mod
