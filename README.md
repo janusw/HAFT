@@ -1,7 +1,7 @@
 # HAFT
 The HADES Acceptance Filter for Theorists (HAFT)
 
-This repository contains a Fortran2003 version of the HAFT code, based on the original F77 code from https://hades-wiki.gsi.de/cgi-bin/view/Public/HadesHAFT.
+This repository contains a Fortran2003 version of the HAFT code, based on the original F77 code from https://hades-wiki.gsi.de/cgi-bin/view/Public/HadesHAFT. This version is being used in the transport codes GiBUU and SMASH (in the latter via f2py).
 
 In contrast to the original code, the reading of the acceptance matrices is done in a compiler-indepedent fashion. This version of the code has been verified to compile with gfortran, ifort, sunf95 and pgf95 and should work with any compiler that supports the Fortran2003 standard.
 
